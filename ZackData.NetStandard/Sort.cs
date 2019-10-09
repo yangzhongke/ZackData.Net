@@ -6,6 +6,18 @@ namespace ZackData.NetStandard
 {
     public class Sort
     {
-        private IList<Order> orders { get; set; } = new List<Order>();
+        public Sort()
+        {
+
+        }
+
+        public Sort(params Order[] orders)
+        {
+            foreach(var order in orders)
+            {
+                Orders.Add(order);
+            }
+        }
+        public IList<Order> Orders { get; set; } = new List<Order>();
     }
 }

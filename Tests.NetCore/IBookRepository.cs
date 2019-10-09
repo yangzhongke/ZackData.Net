@@ -6,8 +6,8 @@ using ZackData.NetStandard;
 
 namespace Tests.NetCore
 {
-    public interface IAlbumRepository : ICrudRepository<Album,long>
+    public interface IBookRepository : ICrudRepository<Book, long>
     {
-        void hello(string s,int a);
+                
     }
 }

@@ -10,10 +10,10 @@ namespace Tests.NetCore
     {
         static void Main(string[] args)
         {
-            using (YZDbContext ctx = new YZDbContext("Data Source=.;Initial Catalog=YouZackDB;Integrated Security=False;User ID=sa;Password=abc@123;"))
+            using (YZDbContext ctx = new YZDbContext("Data Source=.;Initial Catalog=TestDB1;Integrated Security=False;User ID=sa;Password=abc@123;"))
             {
                 var stuGenerator = new RepositoryStubGenerator(() => ctx);
-                var repo = stuGenerator.Create<Album,long, IAlbumRepository>();
+                var repo = stuGenerator.Create<Book,long, IBookRepository>();
                 //IAlbumRepository repo = (IAlbumRepository)stuGenerator.Create(typeof(Album),typeof(long),typeof(IAlbumRepository));
                 //t.hello("yzk", 3);
                 /*
@@ -29,10 +29,14 @@ namespace Tests.NetCore
                 a = repo.AddNew(a);
                 Console.WriteLine(a.Id);*/
                 PageRequest page = new PageRequest { Offset=0,PageSize=10};
-                var albums = repo.FindAll(page);
-                foreach (var album in albums.Content)
+                //var albums = repo.FindAll(page);
+
+                //var albums = repo.Find(e => e.Id ==1, new Sort(Order.Asc("Id"),Order.Desc(nameof(Album.Name_En))));
+                var albums = repo.FindAll();
+                //foreach (var album in albums.Content)
+                foreach (var album in albums)
                 {
-                    Console.WriteLine(album.Name_En);
+                    Console.WriteLine(album);
                 }
             }                
             Console.WriteLine("ok");

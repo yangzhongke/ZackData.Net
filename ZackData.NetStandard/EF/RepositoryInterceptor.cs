@@ -2,9 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections;
-using System.Linq;
-using Microsoft.EntityFrameworkCore.Query;
+//using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Dynamic.Core;
+//using System.Linq.Dynamic.Core;
+using System.Linq.Expressions;
 
 namespace ZackData.NetStandard.EF
 {
@@ -70,7 +73,7 @@ namespace ZackData.NetStandard.EF
                     dbCtx.Remove(entity);
                 }
                 //void DeleteAll(IEnumerable<T> entities);
-                else if (methodName == nameof(ICrudRepository<TEntity, int>.DeleteAll))
+                else if (methodName == nameof(ICrudRepository<int, int>.DeleteAll))
                 {
                     IEnumerable entities = (IEnumerable)argumentValues[0];
                     dbCtx.RemoveRange(entities);
@@ -84,12 +87,16 @@ namespace ZackData.NetStandard.EF
             else if(methodName.StartsWith("Find"))
             {
                 //IEnumerable<T> FindAll();
-                if(argumentValues.Length==0)
+                /*
+                if(methodName== nameof(ICrudRepository<int, int>.FindAll)
+                    && argumentValues.Length==0)
                 {
                     invocation.ReturnValue = dbSet.ToArray();
                 }
-                else if(parameters.Length==1
-                    &&typeof(PageRequest).IsAssignableFrom(parameters[0].ParameterType))
+                //Page<T> FindAll(PageRequest pageRequest);
+                else if (methodName == nameof(ICrudRepository<int, int>.FindAll)
+                    && parameters.Length==1
+                    &&typeof(PageRequest)== parameters[0].ParameterType)
                 {
                     PageRequest pageRequest = (PageRequest)argumentValues[0];
 
@@ -98,12 +105,42 @@ namespace ZackData.NetStandard.EF
                     page.Content = items;
                     invocation.ReturnValue = page;
                 }
+                //IEnumerable<T> Find();
+                //Page<T> Find(PageRequest pageRequest);
+                //IEnumerable<T> Find(Func<TEntity, bool> where, Sort sort);
+                //IEnumerable<T> Find(Func<TEntity, bool> where,PageRequest pageRequest);
+                //IEnumerable<T> Find(Func<TEntity, bool> where,Sort sort);
+                //Page<T> Find(Func<TEntity, bool> where,PageRequest pageRequest, Sort sort);
+                //Page<T> Find(PageRequest pageRequest);
+                */
+                if (methodName =="FindAll")
+                {
+                    System.Linq.IQueryable<TEntity> result = dbSet;
+                    Sort sort = FindSingleParameterOfType<Sort>(invocation);
+                    if (sort != null)
+                    {
+                        ParameterExpression eParameterExpr = Expression.Parameter(typeof(TEntity), "e");
+
+                        foreach (var order in sort.Orders)
+                        {
+                            result = OrderBy(result, order.Property, order.Ascending);
+                        }
+                        //result = result.OrderBy()
+                    }
+                    if(methodName=="FindAll")
+                    {
+                        int aa = 2;
+                        //https://github.com/StefH/System.Linq.Dynamic.Core/wiki/Dynamic-Expressions
+                        result = result.Where("Id!=@0",aa).OrderBy("Price");
+                    }
+                    invocation.ReturnValue = result.ToArray();
+                }
                 else
                 {
                     throw new NotImplementedException(methodName);
                 }
-                //Page<T> FindAll(PageRequest pageRequest);
-                //IEnumerable<T> Find(Predicate<T> where, Sort sort = null);
+                
+                
                 //FindByName(string name)
                 //FindByAlbumId(long albumId,PageRequest pageRequest);
                 //FindByName(string name)
@@ -111,6 +148,54 @@ namespace ZackData.NetStandard.EF
             else
             {
                 throw new NotImplementedException(methodName);
+            }
+        }
+
+        public static System.Linq.IQueryable<TEntity> OrderBy(System.Linq.IQueryable<TEntity> source, string sortProperty, bool isAscending)
+        {
+            var type = typeof(TEntity);
+            var property = type.GetProperty(sortProperty);
+            var parameter = Expression.Parameter(type, "p");
+            var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+            var orderByExp = Expression.Lambda(propertyAccess, parameter);
+            var typeArguments = new Type[] { type, property.PropertyType };
+            var methodName = isAscending ? "OrderBy" : "OrderByDescending";
+            var resultExp = Expression.Call(typeof(Queryable), methodName, typeArguments, source.Expression, Expression.Quote(orderByExp));
+
+            return source.Provider.CreateQuery<TEntity>(resultExp);
+        }
+
+        /// <summary>
+        /// Try to find a parameter of type "TParameter",
+        /// if not find one, return null,
+        /// only zero or one parameter of the type is allowed, if more than one are found, Exception will be thrown
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <returns></returns>
+        static TParameter FindSingleParameterOfType<TParameter>(IInvocation invocation) where TParameter:class
+        {
+            var parameters = invocation.Method.GetParameters();
+            int paramIndex = -1;
+            for (int i=0;i<parameters.Length;i++)
+            {
+                var parameter = parameters[i];
+                if(parameter.ParameterType == typeof(TParameter))
+                {
+                    //another parameter of type TParameter is found
+                    if (paramIndex>=0)
+                    {
+                        throw new ArgumentException($"only zero or one parameter of the type {typeof(TParameter)} is allowed");
+                    }
+                    paramIndex = i;
+                }
+            }
+            if(paramIndex>=0)
+            {
+                return (TParameter)invocation.Arguments[paramIndex];
+            }
+            else
+            {
+                return null;
             }
         }
     }

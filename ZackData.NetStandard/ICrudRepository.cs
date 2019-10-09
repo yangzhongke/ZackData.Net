@@ -23,10 +23,11 @@ namespace ZackData.NetStandard
         bool ExistsById(ID id);
 
         IEnumerable<T> FindAll();
-        IEnumerable<T> Find(Predicate<T> where, Sort sort=null);
+
+        IEnumerable<T> FindAll(Sort sort=null);
         Page<T> FindAll(PageRequest pageRequest);
 
-        IEnumerable<T> FindAllById(IEnumerable<ID> ids);
+        IEnumerable<T> FindAllByIds(IEnumerable<ID> ids);
 
         long Count();
 

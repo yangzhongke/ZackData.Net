@@ -6,11 +6,11 @@ using System.Text;
 
 namespace YouZack.Entities.Configs
 {
-    class AlbumConfiguration : IEntityTypeConfiguration<Album>
+    class AuthorConfiguration : IEntityTypeConfiguration<Author>
     {
-        public void Configure(EntityTypeBuilder<Album> builder)
+        public void Configure(EntityTypeBuilder<Author> builder)
         {
-            builder.ToTable("T_Albums");
+            builder.ToTable("T_Authors");
         }
     }
 }
