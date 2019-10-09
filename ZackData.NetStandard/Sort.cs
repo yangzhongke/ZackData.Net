@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ZackData.NetStandard
 {
-    public class Sort
+    public sealed class Sort
     {
         public Sort()
         {

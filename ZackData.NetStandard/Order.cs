@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ZackData.NetStandard
 {
-    public class Order
+    public sealed class Order
     {
         public bool Ascending { get; set; }
 		public String Property { get; set; }

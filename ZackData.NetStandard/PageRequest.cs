@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ZackData.NetStandard
 {
-    public class PageRequest
+    public sealed class PageRequest
     {
         public int PageNumber { get; set; }
         public int PageSize { get; set; }

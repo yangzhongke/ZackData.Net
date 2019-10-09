@@ -8,6 +8,9 @@ namespace Tests.NetCore
 {
     public interface IBookRepository : ICrudRepository<Book, long>
     {
-                
+        [Query("AuthorId=@0 or Name=@1")]
+        IEnumerable<Book> FindFoo(long authorId,string name, Sort sort);
+
+        IEnumerable<Book> FindByPrice(double price);
     }
 }

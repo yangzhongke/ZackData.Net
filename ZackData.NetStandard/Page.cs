@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ZackData.NetStandard
 {
-    public class Page<T>
+    public sealed class Page<T>
     {
         public int TotalPages { get; protected set; }
         public int TotalElements { get; protected set; }

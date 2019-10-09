@@ -32,11 +32,22 @@ namespace Tests.NetCore
                 //var albums = repo.FindAll(page);
 
                 //var albums = repo.Find(e => e.Id ==1, new Sort(Order.Asc("Id"),Order.Desc(nameof(Album.Name_En))));
-                var albums = repo.FindAll();
+                //var books = repo.FindAll();
+                //var books = repo.FindByAuthorId(1,new Sort(Order.Desc("Price")));
+                //var books = repo.FindByAuthorId(1, new Sort(Order.Desc("Price")));
                 //foreach (var album in albums.Content)
-                foreach (var album in albums)
+
+
+                var books1 = repo.FindByPrice(33);
+                foreach (var book in books1)
                 {
-                    Console.WriteLine(album);
+                    Console.WriteLine(book);
+                }
+                Console.WriteLine("----------------");
+                var books2 = repo.FindFoo(1, "Windows 98", new Sort(Order.Desc("Price")));
+                foreach (var book in books2)
+                {
+                    Console.WriteLine(book);
                 }
             }                
             Console.WriteLine("ok");

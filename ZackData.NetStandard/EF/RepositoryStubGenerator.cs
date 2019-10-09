@@ -34,7 +34,7 @@ namespace ZackData.NetStandard.EF
             where TRepository:class
         {
             ProxyGenerator generator = new ProxyGenerator();
-            IInterceptor interceptor = new RepositoryInterceptor<TEntity>(this.dbContextCreator);
+            IInterceptor interceptor = new RepositoryInterceptor<TEntity,ID>(this.dbContextCreator);
             var h = generator.CreateInterfaceProxyWithoutTarget<TRepository>(interceptor);
             return h;
         }

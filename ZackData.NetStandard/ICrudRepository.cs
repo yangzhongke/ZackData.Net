@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ZackData.NetStandard
 {
-    public interface ICrudRepository<T, ID>
+    public interface ICrudRepository<T, ID>: IRepository<T, ID>
     {
         T AddNew(T entity);
 
@@ -24,13 +24,11 @@ namespace ZackData.NetStandard
 
         IEnumerable<T> FindAll();
 
-        IEnumerable<T> FindAll(Sort sort=null);
-        Page<T> FindAll(PageRequest pageRequest);
+        IEnumerable<T> FindAll(Sort sort);
+        //Page<T> FindAll(PageRequest pageRequest);
 
-        IEnumerable<T> FindAllByIds(IEnumerable<ID> ids);
+        IEnumerable<T> FindAllById(IEnumerable<ID> ids);
 
         long Count();
-
-        void Save();
     }
 }

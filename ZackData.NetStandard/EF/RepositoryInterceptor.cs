@@ -8,10 +8,11 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 //using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace ZackData.NetStandard.EF
 {
-    class RepositoryInterceptor<TEntity> : IInterceptor where TEntity:class
+    class RepositoryInterceptor<TEntity,ID> : IInterceptor where TEntity:class
     {
         private Func<DbContext> dbContextCreator;
         public RepositoryInterceptor(Func<DbContext> dbContextCreator)
@@ -27,23 +28,18 @@ namespace ZackData.NetStandard.EF
             string methodName = invocation.Method.Name;            
             object[] argumentValues = invocation.Arguments;
             var parameters = invocation.Method.GetParameters();
-            var repositoryType = invocation.Method.DeclaringType;
-            var entityType = repositoryType.GenericTypeArguments[0];
-            var idType = repositoryType.GenericTypeArguments[1];
+            //var repositoryType = invocation.Method.DeclaringType;
+            var entityType = typeof(TEntity);
+            var idType = typeof(ID);
 
             var dbCtx = dbContextCreator();
             var dbSet = dbCtx.Set<TEntity>();
             
-            //void Save();
-            if (methodName==nameof(ICrudRepository<int,int>.Save))
-            {
-                dbCtx.SaveChanges();
-            }
-            else if (methodName == nameof(ICrudRepository<int, int>.AddNew))
+            if (methodName == nameof(ICrudRepository<int, int>.AddNew))
             {
                 var firstParamType = parameters[0].ParameterType;
                 //IEnumerable<T> AddNew(IEnumerable<T> entities);
-                if (typeof(IEnumerable<TEntity>).IsAssignableFrom(firstParamType))
+                if (typeof(IEnumerable<TEntity>)==firstParamType)
                 {
                     IEnumerable<TEntity> entities = (IEnumerable<TEntity>)argumentValues[0];
                     dbCtx.AddRange(entities);
@@ -53,7 +49,8 @@ namespace ZackData.NetStandard.EF
                 else//T AddNew(T entity);
                 {                    
                     object entity = argumentValues[0];
-                    dbCtx.Add(entity);                    
+                    dbCtx.Add(entity);
+                    dbCtx.SaveChanges();
                     invocation.ReturnValue = argumentValues[0];
                 }                
             }
@@ -65,18 +62,21 @@ namespace ZackData.NetStandard.EF
                     object id = argumentValues[0];
                     object entity = dbCtx.Find(entityType, id);
                     dbCtx.Remove(entity);
+                    dbCtx.SaveChanges();
                 }
                 //void Delete(T entity);
                 else if (methodName==nameof(ICrudRepository<TEntity, int>.Delete))
                 {
                     object entity = argumentValues[0];
                     dbCtx.Remove(entity);
+                    dbCtx.SaveChanges();
                 }
                 //void DeleteAll(IEnumerable<T> entities);
                 else if (methodName == nameof(ICrudRepository<int, int>.DeleteAll))
                 {
                     IEnumerable entities = (IEnumerable)argumentValues[0];
                     dbCtx.RemoveRange(entities);
+                    dbCtx.SaveChanges();
                 }
                 else
                 {
@@ -113,34 +113,40 @@ namespace ZackData.NetStandard.EF
                 //Page<T> Find(Func<TEntity, bool> where,PageRequest pageRequest, Sort sort);
                 //Page<T> Find(PageRequest pageRequest);
                 */
-                if (methodName =="FindAll")
+                System.Linq.IQueryable<TEntity> result = dbSet;
+                Sort sort = FindSingleParameterOfType<Sort>(invocation);
+                if (sort != null)
                 {
-                    System.Linq.IQueryable<TEntity> result = dbSet;
-                    Sort sort = FindSingleParameterOfType<Sort>(invocation);
-                    if (sort != null)
-                    {
-                        ParameterExpression eParameterExpr = Expression.Parameter(typeof(TEntity), "e");
+                    ParameterExpression eParameterExpr = Expression.Parameter(typeof(TEntity), "e");
 
-                        foreach (var order in sort.Orders)
-                        {
-                            result = OrderBy(result, order.Property, order.Ascending);
-                        }
-                        //result = result.OrderBy()
-                    }
-                    if(methodName=="FindAll")
+                    foreach (var order in sort.Orders)
                     {
-                        int aa = 2;
-                        //https://github.com/StefH/System.Linq.Dynamic.Core/wiki/Dynamic-Expressions
-                        result = result.Where("Id!=@0",aa).OrderBy("Price");
+                        result = OrderBy(result, order.Property, order.Ascending);
                     }
-                    invocation.ReturnValue = result.ToArray();
                 }
-                else
+
+                var queryAttr = invocation.Method.GetCustomAttribute<QueryAttribute>();
+                //if QueryAttribute is marked in the method,
+                //ignore all the naming convetion
+                if (queryAttr!=null)
                 {
-                    throw new NotImplementedException(methodName);
+                    string queryExpression = queryAttr.QueryExpression;
+                    object[] normalArgumentValues = GetNormalArgumentValues(invocation);
+                    result = result.Where(queryExpression, normalArgumentValues);
+                    //https://github.com/StefH/System.Linq.Dynamic.Core/wiki/Dynamic-Expressions
+                    //result = result.Where("Id!=@0", aa).OrderBy("Price");
                 }
-                
-                
+                else//following the naming convetion
+                {
+                    if(methodName.StartsWith("FindBy"))
+                    {
+                        object[] normalArgumentValues = GetNormalArgumentValues(invocation);
+                        string propertyName = methodName.Substring("FindBy".Length);
+                        result = result.Where($"{propertyName}=@0", normalArgumentValues[0]);
+                    }
+                }
+                invocation.ReturnValue = result.ToArray();
+
                 //FindByName(string name)
                 //FindByAlbumId(long albumId,PageRequest pageRequest);
                 //FindByName(string name)
@@ -151,7 +157,30 @@ namespace ZackData.NetStandard.EF
             }
         }
 
-        public static System.Linq.IQueryable<TEntity> OrderBy(System.Linq.IQueryable<TEntity> source, string sortProperty, bool isAscending)
+        /// <summary>
+        /// Get argumentValues(order kept) except the type of Order and PageRequest
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <returns></returns>
+        static object[] GetNormalArgumentValues(IInvocation invocation)
+        {
+            object[] argumentValues = invocation.Arguments;
+            var parameters = invocation.Method.GetParameters();
+
+            List<object> values = new List<object>();
+            for(int i= 0;i<parameters.Length;i++)
+            {
+                var parameter = parameters[i];
+                if(parameter.ParameterType==typeof(Order)|| parameter.ParameterType == typeof(PageRequest))
+                {
+                    continue;
+                }
+                values.Add(argumentValues[i]);
+            }
+            return values.ToArray();
+        }
+
+        public static IQueryable<TEntity> OrderBy(IQueryable<TEntity> source, string sortProperty, bool isAscending)
         {
             var type = typeof(TEntity);
             var property = type.GetProperty(sortProperty);
@@ -164,6 +193,7 @@ namespace ZackData.NetStandard.EF
 
             return source.Provider.CreateQuery<TEntity>(resultExp);
         }
+
 
         /// <summary>
         /// Try to find a parameter of type "TParameter",
@@ -198,5 +228,6 @@ namespace ZackData.NetStandard.EF
                 return null;
             }
         }
+
     }
 }
