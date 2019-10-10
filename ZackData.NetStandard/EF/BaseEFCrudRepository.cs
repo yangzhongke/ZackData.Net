@@ -10,14 +10,14 @@ namespace ZackData.NetStandard
     public class BaseEFCrudRepository<TEntity, ID> : ICrudRepository<TEntity, ID> where TEntity : class
     {
         public virtual bool AutoSave { get; set; } = true;
-        private Func<DbContext> dbContextCreator;
+        protected Func<DbContext> dbContextCreator;
 
         public BaseEFCrudRepository(Func<DbContext> dbContextCreator)
         {
             this.dbContextCreator = dbContextCreator;
         }
 
-        private DbSet<TEntity> dbSet
+        protected DbSet<TEntity> dbSet
         {
             get
             {
@@ -91,7 +91,7 @@ namespace ZackData.NetStandard
 
         public IEnumerable<TEntity> FindAll()
         {
-            return this.dbContextCreator().Set<TEntity>().Where("Id in @0", new long[] { 1,3,5}).ToArray();
+            return this.dbSet.Where("Id in @0", new long[] { 1,3,5}).ToArray();
             //return this.dbContextCreator().Set<TEntity>().ToArray();
         }
 

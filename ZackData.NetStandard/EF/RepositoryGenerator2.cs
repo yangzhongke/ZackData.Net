@@ -7,6 +7,8 @@ using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using System.Linq.Dynamic.Core;
+using Castle.DynamicProxy.Generators.Emitters.CodeBuilders;
+using System.Reflection;
 
 namespace ZackData.NetStandard.EF
 {
@@ -40,6 +42,23 @@ namespace ZackData.NetStandard.EF
             sbCode.AppendLine($"public class {repositoryImplName} : BaseEFCrudRepository<{entityTypeFullName},{idTypeFullName}>,{repositoryInterfaceName}");
             sbCode.AppendLine(@"
                 {");
+            sbCode.AppendLine($"public {repositoryImplName}(Func<DbContext> dbContextCreator):base(dbContextCreator)");
+            sbCode.AppendLine("{}");
+
+            List<Type> interfaces = new List<Type>();
+            interfaces.Add(typeof(TRepository));
+
+            //if the customed IXXXRepository has customed parent interface,like IMyCrudRepository
+            Helper.GetAllParentInterface(typeof(TRepository), interfaces);
+            interfaces.Remove(typeof(ICrudRepository<TEntity,ID>));
+
+            foreach(var intfType in interfaces)
+            {
+                foreach(var intfMethod in intfType.GetMethods())
+                {
+                    sbCode.AppendLine(Helper.CreateCodeFromMethodDelaration(intfMethod)+ "{return this.dbSet;}");
+                }
+            }
 
             sbCode.AppendLine(@"
                 }
@@ -56,7 +75,8 @@ namespace ZackData.NetStandard.EF
             metaReferences.Add(MetadataReference.CreateFromFile(typeof(DynamicQueryableExtensions).Assembly.Location));
 
             var syntaxTree = SyntaxFactory.ParseSyntaxTree(sbCode.ToString());
-            var compilation = CSharpCompilation.Create(repositoryImplAssemblyName,new SyntaxTree[] { syntaxTree }, metaReferences);
+            CSharpCompilationOptions compilationOpt = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            var compilation = CSharpCompilation.Create(repositoryImplAssemblyName,new SyntaxTree[] { syntaxTree }, metaReferences, compilationOpt);
             using (var ms = new MemoryStream())
             {
                 var emitResult = compilation.Emit(ms);
@@ -69,9 +89,11 @@ namespace ZackData.NetStandard.EF
                     }
                     throw new Exception(sbError.ToString());
                 }
+                ms.Position = 0;
+                Assembly asm = Assembly.Load(ms.ToArray());
+                Type repositoryImplType = asm.GetType($"{repositoryInterfaceNamespace}.{repositoryImplName}");
+                return (TRepository)Activator.CreateInstance(repositoryImplType,this.dbContextCreator);
             }
-            
-            return null;
          }
     }
 }

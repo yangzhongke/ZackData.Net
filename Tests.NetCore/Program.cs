@@ -36,7 +36,8 @@ namespace Tests.NetCore
                     Console.WriteLine(book);
                 }*/
                 var repo = new RepositoryGenerator2(() => ctx).Create<Book, long, IBookRepository>();
-                var books1 = repo.FindAll();
+                //var books1 = repo.FindAll();
+                var books1 = repo.FindFoo(3, "3", null);
                 //var books1 = repo.FindAllById(new long[] { 1, 2, 5 });
                 foreach (var book in books1)
                 {
