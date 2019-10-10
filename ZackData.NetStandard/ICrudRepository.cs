@@ -4,30 +4,31 @@ using System.Text;
 
 namespace ZackData.NetStandard
 {
-    public interface ICrudRepository<T, ID>: IRepository<T, ID>
+    public interface ICrudRepository<TEntity, ID> where TEntity:class
     {
-        T AddNew(T entity);
+        bool AutoSave { get; set; }
+        void Save();
 
-        IEnumerable<T> AddNew(IEnumerable<T> entities);
+        TEntity AddNew(TEntity entity);
+
+        IEnumerable<TEntity> AddNew(IEnumerable<TEntity> entities);
 
         void DeleteById(ID id);
 
-        void Delete(T entity);
+        void Delete(TEntity entity);
 
-        void DeleteAll(IEnumerable<T> entities);
+        void DeleteAll(IEnumerable<TEntity> entities);
 
-        T FindById(ID id);
-
-        T FindOne(ID id);
+        TEntity FindById(ID id);
 
         bool ExistsById(ID id);
 
-        IEnumerable<T> FindAll();
+        IEnumerable<TEntity> FindAll();
 
-        IEnumerable<T> FindAll(Sort sort);
+        IEnumerable<TEntity> FindAll(Sort sort);
         //Page<T> FindAll(PageRequest pageRequest);
 
-        IEnumerable<T> FindAllById(IEnumerable<ID> ids);
+        IEnumerable<TEntity> FindAllById(IEnumerable<ID> ids);
 
         long Count();
     }

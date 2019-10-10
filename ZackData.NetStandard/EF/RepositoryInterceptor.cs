@@ -15,15 +15,19 @@ namespace ZackData.NetStandard.EF
     class RepositoryInterceptor<TEntity,ID> : IInterceptor where TEntity:class
     {
         private Func<DbContext> dbContextCreator;
+        private BaseEFCrudRepository<TEntity, ID> respository;
         public RepositoryInterceptor(Func<DbContext> dbContextCreator)
         {
             this.dbContextCreator = dbContextCreator;
+            respository = new BaseEFCrudRepository<TEntity, ID>(dbContextCreator);
         }
 
         //todo，同时支持同步和异步方法
 
         public void Intercept(IInvocation invocation)
         {
+            //todo: using Emit(or compile generated C# Code using Roslyn) to create subclass instead of using AOP may improve performance
+
             //todo: Cached
             string methodName = invocation.Method.Name;            
             object[] argumentValues = invocation.Arguments;
@@ -35,7 +39,16 @@ namespace ZackData.NetStandard.EF
             var dbCtx = dbContextCreator();
             var dbSet = dbCtx.Set<TEntity>();
             
-            if (methodName == nameof(ICrudRepository<int, int>.AddNew))
+            if(typeof(BaseEFCrudRepository<TEntity, ID>).GetMethods().Any(m=>m.Name==invocation.Method.Name
+            &&m.ReturnType==invocation.Method.ReturnType&&m.GetParameters().SequenceEqual(invocation.Method.GetParameters())
+            ))
+            {
+                invocation.ReturnValue = invocation.Method.Invoke(this.respository, invocation.Arguments);
+                return;
+            }
+
+
+            if (methodName == nameof(ICrudRepository<object, int>.AddNew))
             {
                 var firstParamType = parameters[0].ParameterType;
                 //IEnumerable<T> AddNew(IEnumerable<T> entities);
@@ -72,7 +85,7 @@ namespace ZackData.NetStandard.EF
                     dbCtx.SaveChanges();
                 }
                 //void DeleteAll(IEnumerable<T> entities);
-                else if (methodName == nameof(ICrudRepository<int, int>.DeleteAll))
+                else if (methodName == nameof(ICrudRepository<object, int>.DeleteAll))
                 {
                     IEnumerable entities = (IEnumerable)argumentValues[0];
                     dbCtx.RemoveRange(entities);
