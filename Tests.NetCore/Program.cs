@@ -1,9 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Query.Expressions;
 using Microsoft.EntityFrameworkCore.Query.ExpressionTranslators;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Query.Sql;
 using Microsoft.EntityFrameworkCore.Storage;
+using Remotion.Linq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Dynamic.Core.Parser;
@@ -88,13 +93,14 @@ namespace Tests.NetCore
                 {
                     Console.WriteLine(item);
                 }*/
+                /*
                 var repo = new RepositoryGenerator2(() => ctx).Create<Book, long, IBookRepository>();
                 Sort sort = new Sort(Order.Desc("Price"), Order.Asc("Id"));
                 var books = repo.FindAll(sort);
                 foreach (var book in books)
                 {
                     Console.WriteLine(book);
-                }
+                }*/
                 //repo.Save();
                 //var books1 = repo.FindAll();
                 //var books1 = repo.FindFoo(3, "3", null);
@@ -104,6 +110,27 @@ namespace Tests.NetCore
                 {
                     Console.WriteLine(book);
                 }*/
+                /*
+                Expression<Func<Book, bool>> exp = (b=>b.Id>2);
+                var exp1 = ctx.Books.Select(exp).Expression;
+                IMethodCallTranslator t = ctx.GetService<IMethodCallTranslator>();
+                var exp2 = t.Translate((MethodCallExpression)exp1);*/
+                // Expression<Func<Book, bool>> predicate = b => b.Id > 5;
+
+                //string s = ctx.Books.Where(predicate).Expression.ToString();
+                // var s = ctx.Books.Where(b=>b.Id>5);
+                // Console.WriteLine(s.ToSql());
+                var s = ctx.Books.Where(b => b.Id > 5);
+                IQuerySqlGeneratorFactory qSqlFac = ctx.GetService<IQuerySqlGeneratorFactory>();
+                IQueryModelGenerator gen = ctx.GetService<IQueryModelGenerator>();
+                QueryModel qm =  gen.ParseQuery(s.Expression);
+                DatabaseDependencies dbDependencies = ctx.GetService<DatabaseDependencies>();
+                RelationalQueryModelVisitor modelVisitor = (RelationalQueryModelVisitor)dbDependencies.QueryCompilationContextFactory.Create(false).CreateQueryModelVisitor();
+                modelVisitor.VisitQueryModel(qm);
+
+               var sql = modelVisitor.Queries.First().ToString();
+                Console.WriteLine(sql);
+                //var gen = qSqlFac.CreateDefault((SelectExpression)s.Expression);
             }                
             Console.WriteLine("ok");
             Console.Read();

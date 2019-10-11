@@ -139,8 +139,7 @@ namespace ZackData.NetStandard
 
         public void Save()
         {
-
-            // this.dbContextCreator().SaveChanges();
+            this.dbContextCreator().SaveChanges();
         }
 
         public IEnumerable<TEntity> Find(string predicate, params object[] args)
