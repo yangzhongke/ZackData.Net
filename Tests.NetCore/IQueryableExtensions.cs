@@ -12,10 +12,8 @@ namespace Tests.NetCore
     {
         public static string ToSql<TEntity>(this IQueryable<TEntity> query,DbContext dbCtx)
         {
-            IQueryCompiler queryCompiler = dbCtx.GetService<IQueryCompiler>();
             IQueryModelGenerator modelGenerator = dbCtx.GetService<IQueryModelGenerator>();
             QueryModel queryModel = modelGenerator.ParseQuery(query.Expression);
-            IDatabase database = dbCtx.GetService<IDatabase>();
             DatabaseDependencies databaseDependencies = dbCtx.GetService<DatabaseDependencies>();
             QueryCompilationContext queryCompilationContext = databaseDependencies.QueryCompilationContextFactory.Create(false);
             RelationalQueryModelVisitor modelVisitor = (RelationalQueryModelVisitor)queryCompilationContext.CreateQueryModelVisitor();
