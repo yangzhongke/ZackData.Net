@@ -126,16 +126,18 @@ namespace ZackData.NetStandard.EF
                 //Page<T> Find(Func<TEntity, bool> where,PageRequest pageRequest, Sort sort);
                 //Page<T> Find(PageRequest pageRequest);
                 */
+                
                 System.Linq.IQueryable<TEntity> result = dbSet;
                 Sort sort = FindSingleParameterOfType<Sort>(invocation);
-                if (sort != null)
+                if (sort != null&&sort.Orders.Count>0)
                 {
-                    ParameterExpression eParameterExpr = Expression.Parameter(typeof(TEntity), "e");
-
-                    foreach (var order in sort.Orders)
+                    var firstOrder = sort.Orders.First();
+                    var orderedResult = Helper.OrderBy(result, firstOrder.Property, firstOrder.Ascending);
+                    foreach (var order in sort.Orders.Skip(1))
                     {
-                        result = OrderBy(result, order.Property, order.Ascending);
+                        orderedResult = Helper.ThenBy(orderedResult, order.Property, order.Ascending);
                     }
+                    result = orderedResult;
                 }
 
                 var queryAttr = invocation.Method.GetCustomAttribute<QueryAttribute>();
@@ -193,19 +195,7 @@ namespace ZackData.NetStandard.EF
             return values.ToArray();
         }
 
-        public static IQueryable<TEntity> OrderBy(IQueryable<TEntity> source, string sortProperty, bool isAscending)
-        {
-            var type = typeof(TEntity);
-            var property = type.GetProperty(sortProperty);
-            var parameter = Expression.Parameter(type, "p");
-            var propertyAccess = Expression.MakeMemberAccess(parameter, property);
-            var orderByExp = Expression.Lambda(propertyAccess, parameter);
-            var typeArguments = new Type[] { type, property.PropertyType };
-            var methodName = isAscending ? "OrderBy" : "OrderByDescending";
-            var resultExp = Expression.Call(typeof(Queryable), methodName, typeArguments, source.Expression, Expression.Quote(orderByExp));
 
-            return source.Provider.CreateQuery<TEntity>(resultExp);
-        }
 
 
         /// <summary>

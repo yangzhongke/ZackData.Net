@@ -10,6 +10,8 @@ namespace YouZack.Entities
         public long Id { get; set; }
         public string Name { get; set; }
         public int Age { get; set; }
+
+        [IgnoreDuringToString]
         public IList<Book> Books { get; set; } = new List<Book>();
     }
 }

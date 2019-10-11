@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace ZackData.NetStandard.EF
 {
@@ -47,6 +48,34 @@ namespace ZackData.NetStandard.EF
             sbCode.Append(string.Join(",", argsCode));
             sbCode.Append(")");
             return sbCode.ToString();
+        }
+
+        public static IOrderedQueryable<TEntity> OrderBy<TEntity>(IQueryable<TEntity> source, string sortProperty, bool isAscending)
+        {
+            var type = typeof(TEntity);
+            var property = type.GetProperty(sortProperty);
+            var parameter = Expression.Parameter(type, "p");
+            var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+            var orderByExp = Expression.Lambda(propertyAccess, parameter);
+            var typeArguments = new Type[] { type, property.PropertyType };
+            var methodName = isAscending ? "OrderBy" : "OrderByDescending";
+            var resultExp = Expression.Call(typeof(Queryable), methodName, typeArguments, source.Expression, Expression.Quote(orderByExp));
+
+            return (IOrderedQueryable<TEntity>)source.Provider.CreateQuery<TEntity>(resultExp);
+        }
+
+        public static IOrderedQueryable<TEntity> ThenBy<TEntity>(IOrderedQueryable<TEntity> source, string sortProperty, bool isAscending)
+        {
+            var type = typeof(TEntity);
+            var property = type.GetProperty(sortProperty);
+            var parameter = Expression.Parameter(type, "p");
+            var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+            var thenByExp = Expression.Lambda(propertyAccess, parameter);
+            var typeArguments = new Type[] { type, property.PropertyType };
+            var methodName = isAscending ? "ThenBy" : "ThenByDescending";
+            var resultExp = Expression.Call(typeof(Queryable), methodName, typeArguments, source.Expression, Expression.Quote(thenByExp));
+
+            return (IOrderedQueryable<TEntity>)source.Provider.CreateQuery<TEntity>(resultExp);
         }
     }
 }
