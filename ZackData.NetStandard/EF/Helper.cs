@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 
 namespace ZackData.NetStandard.EF
 {
-    static class Helper
+    public static class Helper
     {
         public static void GetAllParentInterface(Type type,List<Type> interfaces)
         {

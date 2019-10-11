@@ -1,0 +1,5 @@
+﻿1. Use Microsoft.SqlServer.SqlManagementObjects(https://www.nuget.org/packages/Microsoft.SqlServer.SqlManagementObjects/),
+using Microsoft.SqlServer.Management.SqlParser.Parser.Parser can parse SQL into AST.
+So we can use Parser and dbContext.Model to translate "select Id,Name from Books" into "select FId,FName from T_Books"
+order Delete("Author.Id=@aid")
+

@@ -120,17 +120,24 @@ namespace Tests.NetCore
                 //string s = ctx.Books.Where(predicate).Expression.ToString();
                 // var s = ctx.Books.Where(b=>b.Id>5);
                 // Console.WriteLine(s.ToSql());
-                var s = ctx.Books.Where(b => b.Id > 5);
-                IQuerySqlGeneratorFactory qSqlFac = ctx.GetService<IQuerySqlGeneratorFactory>();
-                IQueryModelGenerator gen = ctx.GetService<IQueryModelGenerator>();
-                QueryModel qm =  gen.ParseQuery(s.Expression);
-                DatabaseDependencies dbDependencies = ctx.GetService<DatabaseDependencies>();
-                RelationalQueryModelVisitor modelVisitor = (RelationalQueryModelVisitor)dbDependencies.QueryCompilationContextFactory.Create(false).CreateQueryModelVisitor();
-                modelVisitor.VisitQueryModel(qm);
+                var s = ctx.Books.Where(b => b.Id > 1).Include(b=>b.Author);
+                // IQuerySqlGeneratorFactory qSqlFac = ctx.GetService<IQuerySqlGeneratorFactory>();
+                /*
+                 IQueryModelGenerator gen = ctx.GetService<IQueryModelGenerator>();
+                 QueryModel qm =  gen.ParseQuery(s.Expression);
 
-               var sql = modelVisitor.Queries.First().ToString();
-                Console.WriteLine(sql);
-                //var gen = qSqlFac.CreateDefault((SelectExpression)s.Expression);
+                 DatabaseDependencies dbDependencies = ctx.GetService<DatabaseDependencies>();
+                 RelationalQueryModelVisitor modelVisitor = (RelationalQueryModelVisitor)dbDependencies.QueryCompilationContextFactory.Create(false)
+                     .CreateQueryModelVisitor();
+                 modelVisitor.VisitQueryModel(qm);
+
+                var sql = modelVisitor.Queries.First().ToString();
+                 Console.WriteLine(sql);
+                 foreach(var b in s)
+                 {
+                     Console.WriteLine(b);
+                 }*/
+                Console.WriteLine(s.ToSql(ctx));
             }                
             Console.WriteLine("ok");
             Console.Read();
