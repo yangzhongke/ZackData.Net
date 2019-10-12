@@ -8,7 +8,6 @@ namespace ZackData.NetStandard
     {
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
-        public int Offset { get; set; }
         public Sort Sort { get; set; }
     }
 }

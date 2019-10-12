@@ -34,8 +34,16 @@ namespace Tests.NetCore
                     Console.WriteLine(b);
                 }*/
                 BaseEFCrudRepository<Book, long> rep = new BaseEFCrudRepository<Book, long>(()=>ctx);
-                var books = rep.Find("Id>=13");
-                rep.DeleteAll(books);
+                PageRequest pageReq = new PageRequest { PageNumber = 1, PageSize = 3, 
+                    Sort = new Sort(Order.Desc("Price")) };
+                var page = rep.Find(pageReq, "Price>5");
+                
+                foreach (var b in page.Content)
+                {
+                    Console.WriteLine(b);
+                }
+
+                Console.WriteLine(page.TotalElements);
             }                
             Console.WriteLine("ok");
             Console.Read();

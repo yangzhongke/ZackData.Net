@@ -170,7 +170,7 @@ namespace ZackData.NetStandard
                 sbSQL.Append(")");
                 //EFCore can convert {0}{1} to parameters to prevent SQL-Injection
                 object[] args = ids.Select(e => (object)e).ToArray();
-                return ExecuteSqlCommand(sbSQL, args);
+                return ExecuteSqlCommand(sbSQL.ToString(), args);
             }//if multiple primary Key, using RemoveRange
             else
             {
@@ -202,35 +202,24 @@ namespace ZackData.NetStandard
             return DbSet.Any("Id=@0",id);
         }
 
-        public IEnumerable<TEntity> FindAll()
+        public IQueryable<TEntity> FindAll()
         {
-            return this.DbSet.ToArray();
+            return this.DbSet;
         }
 
-        public IEnumerable<TEntity> FindAll(Sort sort)
+        public IQueryable<TEntity> FindAll(Sort sort)
         {
-            IQueryable<TEntity> result = this.DbSet;
-            if (sort != null && sort.Orders.Count > 0)
-            {
-                var firstOrder = sort.Orders.First();
-                var orderedResult = Helper.OrderBy(result, firstOrder.Property, firstOrder.Ascending);
-                foreach (var order in sort.Orders.Skip(1))
-                {
-                    orderedResult = Helper.ThenBy(orderedResult, order.Property, order.Ascending);
-                }
-                result = orderedResult;
-            }
-            return result.ToArray();
+            return this.Find(sort, null);
         }
 
-        public IEnumerable<TEntity> FindAllById(IEnumerable<ID> ids)
+        public IQueryable<TEntity> FindAllById(IEnumerable<ID> ids)
         {
             var pKeys = this.dbContextCreator().Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;  
             if(!pKeys.Any(k=>k.Name=="Id"))
             {
                 throw new PropertyNotFoundException("There is no Property named Id");
             }
-            return DbSet.Where("Id in @0", ids).ToArray();
+            return DbSet.Where("Id in @0", ids);
         }
 
         public TEntity FindById(ID id)
@@ -243,9 +232,9 @@ namespace ZackData.NetStandard
             return DbSet.Where("Id=@0", id).SingleOrDefault();
         }
         
-        public IEnumerable<TEntity> Find(string predicate, params object[] args)
+        public IQueryable<TEntity> Find(string predicate, params object[] args)
         {
-            return DbSet.Where(predicate, args).ToArray();
+            return DbSet.Where(predicate, args);
         }
 
         public TEntity FindOne(string predicate, params object[] args)
@@ -253,14 +242,49 @@ namespace ZackData.NetStandard
             return DbSet.Where(predicate, args).SingleOrDefault();
         }
 
-        public IEnumerable<TEntity> Find(Sort sort, string predicate, params object[] args)
+        public IQueryable<TEntity> Find(Sort sort, string predicate, params object[] args)
         {
-            throw new NotImplementedException();
+            IQueryable<TEntity> result = this.DbSet.Where(predicate,args);
+            if (sort != null && sort.Orders.Count > 0)
+            {
+                var firstOrder = sort.Orders.First();
+                var orderedResult = Helper.OrderBy(result, firstOrder.Property, firstOrder.Ascending);
+                foreach (var order in sort.Orders.Skip(1))
+                {
+                    orderedResult = Helper.ThenBy(orderedResult, order.Property, order.Ascending);
+                }
+                result = orderedResult;
+            }
+            return result;
         }
 
-        public Page<TEntity> Find(PageRequest pageRequest, Sort sort, string predicate, params object[] args)
+        public Page<TEntity> Find(PageRequest pageRequest, string predicate, params object[] args)
         {
-            throw new NotImplementedException();
+            if(pageRequest==null)
+            {
+                throw new ArgumentNullException(nameof(pageRequest));
+            }
+            Page<TEntity> page = new Page<TEntity>();
+
+            IQueryable<TEntity> result = this.DbSet.Where(predicate, args);
+            var sort = pageRequest.Sort;
+            if (sort != null && sort.Orders.Count > 0)
+            {
+                var firstOrder = sort.Orders.First();
+                var orderedResult = Helper.OrderBy(result, firstOrder.Property, firstOrder.Ascending);
+                foreach (var order in sort.Orders.Skip(1))
+                {
+                    orderedResult = Helper.ThenBy(orderedResult, order.Property, order.Ascending);
+                }
+                result = orderedResult;
+            }
+            long totalCount = result.LongCount();
+
+            result = result.Skip((pageRequest.PageNumber - 1) * pageRequest.PageSize).Take(pageRequest.PageSize);
+            page.Content = result;
+            page.TotalElements = totalCount;
+
+            return page;
         }
 
         protected int SaveChanges()
@@ -278,11 +302,6 @@ namespace ZackData.NetStandard
         {
             //ExecuteSqlCommand:Install-Package Microsoft.EntityFrameworkCore.Relational -Version 2.2.0
             return dbContextCreator().Database.ExecuteSqlCommand(sql, args);
-        }
-
-        protected int ExecuteSqlCommand(StringBuilder sql, params object[] args)
-        {
-            return ExecuteSqlCommand(sql.ToString(), args);
         }
     }
 }

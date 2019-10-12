@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ZackData.NetStandard
 {
     public interface ICrudRepository<TEntity, ID> where TEntity:class
     {
-        IEnumerable<TEntity> Find(Sort sort, string predicate, params object[] args);
+        IQueryable<TEntity> Find(Sort sort, string predicate, params object[] args);
 
-        Page<TEntity> Find(PageRequest pageRequest, Sort sort, string predicate, params object[] args);
+        Page<TEntity> Find(PageRequest pageRequest, string predicate, params object[] args);
 
         TEntity AddNew(TEntity entity);
 
@@ -24,12 +25,12 @@ namespace ZackData.NetStandard
 
         bool ExistsById(ID id);
 
-        IEnumerable<TEntity> FindAll();
+        IQueryable<TEntity> FindAll();
 
-        IEnumerable<TEntity> FindAll(Sort sort);
+        IQueryable<TEntity> FindAll(Sort sort);
         //Page<T> FindAll(PageRequest pageRequest);
 
-        IEnumerable<TEntity> FindAllById(IEnumerable<ID> ids);
+        IQueryable<TEntity> FindAllById(IEnumerable<ID> ids);
 
         long Count();
     }
