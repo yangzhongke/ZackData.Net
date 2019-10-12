@@ -5,12 +5,12 @@ using System.Text;
 namespace ZackData.NetStandard
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-    public class NativeQueryAttribute : Attribute
+    public class NativeSQLAttribute : Attribute
     {
         public string Sql { get; private set; }
-        public NativeQueryAttribute(string queryExpression)
+        public NativeSQLAttribute(string sql)
         {
-            this.Sql = queryExpression;
+            this.Sql = sql;
         }
     }
 }

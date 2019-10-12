@@ -3,3 +3,4 @@ using Microsoft.SqlServer.Management.SqlParser.Parser.Parser can parse SQL into 
 So we can use Parser and dbContext.Model to translate "select Id,Name from Books" into "select FId,FName from T_Books"
 order Delete("Author.Id=@aid")
 
+2. Test on EF Core 3.0

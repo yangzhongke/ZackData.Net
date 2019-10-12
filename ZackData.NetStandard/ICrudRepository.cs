@@ -6,20 +6,10 @@ namespace ZackData.NetStandard
 {
     public interface ICrudRepository<TEntity, ID> where TEntity:class
     {
-        bool AutoSave { get; set; }
-        void Save();
-
-        IEnumerable<TEntity> Find(string predicate, params object[] args);
-
         IEnumerable<TEntity> Find(Sort sort, string predicate, params object[] args);
 
         Page<TEntity> Find(PageRequest pageRequest, Sort sort, string predicate, params object[] args);
 
-        IEnumerable<TEntity> FromSQL(string sql, params object[] args);
-
-        int ExecuteSqlCommand(string sql, params object[] args);
-
-        TEntity FindOne(string predicate, params object[] args);
         TEntity AddNew(TEntity entity);
 
         IEnumerable<TEntity> AddNew(IEnumerable<TEntity> entities);
@@ -28,7 +18,7 @@ namespace ZackData.NetStandard
 
         void Delete(TEntity entity);
 
-        void DeleteAll(IEnumerable<TEntity> entities);
+        int DeleteAll(IEnumerable<TEntity> entities);
 
         TEntity FindById(ID id);
 
@@ -42,6 +32,5 @@ namespace ZackData.NetStandard
         IEnumerable<TEntity> FindAllById(IEnumerable<ID> ids);
 
         long Count();
-        long Count(string predicate, params object[] args);
     }
 }

@@ -140,7 +140,7 @@ namespace ZackData.NetStandard.EF
                     result = orderedResult;
                 }
 
-                var queryAttr = invocation.Method.GetCustomAttribute<QueryAttribute>();
+                var queryAttr = invocation.Method.GetCustomAttribute<PredicateAttribute>();
                 //if QueryAttribute is marked in the method,
                 //ignore all the naming convetion
                 if (queryAttr!=null)

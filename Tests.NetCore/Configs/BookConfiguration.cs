@@ -10,8 +10,12 @@ namespace YouZack.Entities.Configs
     {
         public void Configure(EntityTypeBuilder<Book> builder)
         {
-            builder.ToTable("T_Books");
-            //builder.HasOne(e => e.Author).WithMany().HasForeignKey(e => e.AuthorId).IsRequired();
+            builder.ToTable("T_Books").HasKey(b=>b.Id);
+            builder.Property(nameof(Book.Id)).HasColumnName("FId").UseSqlServerIdentityColumn();
+            builder.Property(nameof(Book.AuthorId)).HasColumnName("FAuthorId");
+            builder.Property(nameof(Book.Name)).HasColumnName("FName");
+            builder.Property(nameof(Book.Price)).HasColumnName("FPrice");
+            builder.Property(nameof(Book.PublishDate)).HasColumnName("FPublishDate");
             builder.HasOne(e => e.Author).WithMany(e=>e.Books).HasForeignKey(e => e.AuthorId).IsRequired();
         }
     }
