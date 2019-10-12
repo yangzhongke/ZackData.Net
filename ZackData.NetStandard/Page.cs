@@ -10,14 +10,11 @@ namespace ZackData.NetStandard
         public long TotalPages { get; set; }
         public long TotalElements { get; set; }
 
-        public long PageNumberOfCurrent { get; set; }
+        /// <summary>
+        /// zero-based
+        /// </summary>
+        public long PageNumber { get; set; }
         public int PageSize { get; set; }
-        public int NumberOfCurrentElements { get; set; }
         public IQueryable<T> Content { get; set; }
-        public Sort Sort { get; set; }
-
-        public bool IsFirst { get; set; }
-
-        public bool IsLast { get; set; }
     }
 }

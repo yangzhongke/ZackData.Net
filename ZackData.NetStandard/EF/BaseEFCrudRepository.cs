@@ -1,16 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
-using System.Linq.Expressions;
-using ZackData.NetStandard.EF;
-using ZackData.NetStandard.Exceptions;
-using System.Linq.Dynamic.Core.Parser;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using System.Reflection;
 using System.Text;
+using ZackData.NetStandard.EF;
+using ZackData.NetStandard.Exceptions;
 
 namespace ZackData.NetStandard
 {
@@ -278,12 +275,17 @@ namespace ZackData.NetStandard
                 }
                 result = orderedResult;
             }
-            long totalCount = result.LongCount();
 
-            result = result.Skip((pageRequest.PageNumber - 1) * pageRequest.PageSize).Take(pageRequest.PageSize);
+            //Calculate the totalCount 
+            long totalCount = result.LongCount();
+            //do pageing,query current data of page
+            result = result.Skip(pageRequest.PageNumber * pageRequest.PageSize).Take(pageRequest.PageSize);
+
             page.Content = result;
             page.TotalElements = totalCount;
-
+            page.PageNumber = pageRequest.PageNumber;
+            page.PageSize = pageRequest.PageSize;
+            page.TotalPages = (int)Math.Ceiling(totalCount*1.0 / pageRequest.PageSize);
             return page;
         }
 
