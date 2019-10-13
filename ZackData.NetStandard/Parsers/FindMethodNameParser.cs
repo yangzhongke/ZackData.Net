@@ -14,12 +14,12 @@ namespace ZackData.NetStandard.Parsers
     {
         private static RegexOptions reOptions = RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled;
         //if use PredicateAttribute,the 'ByXXX'  should be ignored by parser
-        private static readonly Regex reFindMethod = new Regex("^Find(By(?<PropertyPart>.+?))(OrderBy(?<OrderByName>.+)(?<OrderingRule>Asc|Desc)?)$", reOptions);
+        private static readonly Regex reFindMethod = new Regex("^Find(By(?<PropertyPart>.+)?)((OrderBy(?<OrderByName>.+)(?<OrderingRule>Asc|Desc)?)?)$", reOptions);
 
         //Name1,Name1AndName2,Name1OrName2
-        private static readonly Regex reFindMethod_ByProperties = new Regex("^(?<Property1>.+?)(?<Operator>(And|Or)?)((?<Property2>.+)?)$", reOptions);//don't support more than 2 columnNames, because too long to be supported
+        private static readonly Regex reByProperties = new Regex("^(?<Property1>.+?)(?<Operator>(And|Or)?)((?<Property2>.+)?)$", reOptions);//don't support more than 2 columnNames, because too long to be supported
         //Name1GreaterThan
-        private static readonly Regex reFindMethod_PropertyTerm = new Regex("^(.+?)(Between|LessThan|LessThanEqual|GreaterThan|GreaterThanEqual|After|Before|IsNull|IsNotNull|Like|NotLike|StartingWith|EndingWith|Containing|Not|In|NotIn|True|False)$", reOptions);
+        private static readonly Regex rePropertyTerm = new Regex("^(.+?)(Between|Equals|NotEquals|LessThan|LessThanEqual|GreaterThan|GreaterThanEqual|IsNull|IsNotNull|StartsWith|EndsWith|Contains|In|True|False)$", reOptions);
 
         public static FindMethodBaseInfo Parse(MethodInfo findMethod)
         {
@@ -27,10 +27,6 @@ namespace ZackData.NetStandard.Parsers
             string findMethodName = findMethod.Name;
             FindMethodBaseInfo findMethodBaseInfo;
             Match matchFindMethod = reFindMethod.Match(findMethodName);
-            if (!matchFindMethod.Success)
-            {
-                throw new ConventionException($"Method {findMethodName} not comply with the pattern {reFindMethod}");
-            }
             //begin analyse the methodName
             var groupsFindMethod = matchFindMethod.Groups;
             var groupPropertyPart = groupsFindMethod["PropertyPart"];
@@ -41,14 +37,18 @@ namespace ZackData.NetStandard.Parsers
                 findMethodBaseInfo = new FindByPredicateMethodInfo();
                 ((FindByPredicateMethodInfo)findMethodBaseInfo).Predicate = predicateAttr.Predicate;
             }
-            else if(!groupPropertyPart.Success)//no 'By', like FindOrderByPrice
-            {
-                findMethodBaseInfo = new FindWithoutByMethodInfo();
-            }
             else
             {
-                var matchFindMethod_ByProperties = reFindMethod_ByProperties.Match(groupPropertyPart.Value);
-                var matchFindMethod_PropertyTerm = reFindMethod_PropertyTerm.Match(groupPropertyPart.Value);
+                if (!matchFindMethod.Success)
+                {
+                    throw new ConventionException($"Method {findMethodName} not comply with the pattern {reFindMethod}");
+                }
+                if (!groupPropertyPart.Success)//no 'By', like FindOrderByPrice
+                {
+                    findMethodBaseInfo = new FindWithoutByMethodInfo();
+                }
+                var matchFindMethod_ByProperties = reByProperties.Match(groupPropertyPart.Value);
+                var matchFindMethod_PropertyTerm = rePropertyTerm.Match(groupPropertyPart.Value);
                 if(matchFindMethod_ByProperties.Success)//NameOrAge,NameAndAge,Name,Age
                 {
                     var groupProperty1 = matchFindMethod_ByProperties.Groups["Property1"];
@@ -85,7 +85,7 @@ namespace ZackData.NetStandard.Parsers
                 }
                 else
                 {
-                    throw new ConventionException($"{groupPropertyPart.Value} not comply with the pattern {reFindMethod_ByProperties} nor {reFindMethod_PropertyTerm}");
+                    throw new ConventionException($"{groupPropertyPart.Value} not comply with the pattern {reByProperties} nor {rePropertyTerm}");
                 }                
             }
 
@@ -104,10 +104,31 @@ namespace ZackData.NetStandard.Parsers
             {
                 throw new ConventionException($"Order or Order[] cannot be used in a method whose name contains 'OrderBy' {findMethod}");
             }
+            if(orderParameter != null)
+            {
+                findMethodBaseInfo.OrderParameter = orderParameter;
+            }
+            else if(ordersParameter!=null)
+            {
+                findMethodBaseInfo.OrdersParameter = ordersParameter;
+            }
+            else if(groupOrderByName.Success)
+            {
+                string orderByPropertyName = groupOrderByName.Value;
+                string orderingRule = groupOrderingRule.Value;
+                Order order = new Order(orderByPropertyName);
+                order.Ascending = orderingRule.EqualsIgnoreCase("Asc");
+                findMethodBaseInfo.OrderInMethodName = order;
+            }
+            else
+            {
+                throw new ConventionException($"Unexpected status {findMethod}");
+            }
+            //end analyse the Order
 
-
-            ParameterInfo pageRequestParameter = Helper.FindSingleParameterOfType(findMethod, typeof(PageRequest));
-
+            findMethodBaseInfo.PageRequestParameter= Helper.FindSingleParameterOfType(findMethod, typeof(PageRequest));
+            findMethodBaseInfo.MethodName = findMethodName;
+            findMethodBaseInfo.ReturnType = findMethod.ReturnType;
             return findMethodBaseInfo;
         }
     }

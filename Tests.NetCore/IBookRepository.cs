@@ -15,6 +15,7 @@ namespace Tests.NetCore
         IEnumerable<Book> FindFooOrderByPrice(long authorId, string name, Order[] sorts);
 
         IEnumerable<Book> FindByPrice(double price);
+        IEnumerable<Book> FindByPriceIsNull();
 
         IEnumerable<Book> FindByPriceAndName(double price,string name);
 

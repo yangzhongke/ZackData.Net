@@ -23,13 +23,22 @@ namespace Tests.NetCore
                 RepositoryStubGenerator gen = new RepositoryStubGenerator(() => ctx);
                 var rep = gen.Create<Book,long,IBookRepository>();
                 //var rep = new BaseEFCrudRepository<Book, long>(() => ctx);
+                //var books = rep.Find("Name.Contains(\"m\")");
+                //var books = rep.Find("!(Id in @0)",new long[] { 3,5});
+                var books = rep.FindByPriceIsNull();
+                foreach (var b in books)
+                {
+                    Console.WriteLine(b);
+                }
+                Console.WriteLine("ok");
 
+                /*
                 var books = rep.FindFoo(1, "3About Microsoft", Order.Asc("Priace"));
                 foreach(var b in books)
                 {
                     Console.WriteLine(b);
                 }
-                Console.WriteLine("ok");
+                */
                 /*
                 PageRequest pageReq = new PageRequest { PageNumber = 1, PageSize = 3, 
                     Sort = new Sort(Order.Desc("Price")) };

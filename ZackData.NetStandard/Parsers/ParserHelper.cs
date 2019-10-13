@@ -15,13 +15,13 @@ namespace ZackData.NetStandard.Parsers
             return (FindByTwoPropertiesMethodInfo.OperatorType)Enum.Parse(typeof(FindByTwoPropertiesMethodInfo.OperatorType), value, true);
         }
 
-        public static FindByPropertyVerbMethodInfo.PropertyVerb ParsePropertyVerb(string value)
+        public static PropertyVerb ParsePropertyVerb(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
                 throw new ArgumentNullException(nameof(value));
             }
-            return (FindByPropertyVerbMethodInfo.PropertyVerb)Enum.Parse(typeof(FindByPropertyVerbMethodInfo.PropertyVerb), value, true);
+            return (PropertyVerb)Enum.Parse(typeof(PropertyVerb), value, true);
         }
     }
 }

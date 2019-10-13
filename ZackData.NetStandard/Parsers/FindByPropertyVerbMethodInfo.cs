@@ -8,29 +8,5 @@ namespace ZackData.NetStandard.Parsers
     {
         public string PropertyName { get; set; }
         public PropertyVerb Verb { get; set; }
-
-        public enum PropertyVerb
-        {
-            Unkown,
-            Between,
-            LessThan,
-            LessThanEqual,
-            GreaterThan,
-            GreaterThanEqual,
-            After,
-            Before,
-            IsNull,
-            IsNotNull,
-            Like,
-            NotLike,
-            StartingWith,
-            EndingWith,
-            Containing,
-            Not,
-            In,
-            NotIn,
-            True,
-            False
-        }
     }
 }

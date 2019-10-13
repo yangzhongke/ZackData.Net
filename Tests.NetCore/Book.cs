@@ -13,5 +13,6 @@ namespace YouZack.Entities
         public DateTime PublishDate { get; set; }
         public long AuthorId { get; set; }
         public Author Author { get; set; }    
+        public bool IsDomestic { get; set; }
     }
 }

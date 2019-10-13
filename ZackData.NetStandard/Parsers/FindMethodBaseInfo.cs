@@ -8,9 +8,22 @@ namespace ZackData.NetStandard.Parsers
     abstract class FindMethodBaseInfo
     {
         public string MethodName { get; set; }
+        
+        /// <summary>
+        /// FindByNameOrderByAge
+        /// </summary>
+        public Order OrderInMethodName { get; set; }
 
-        public Order Order { get; set; }
-        public ParameterInfo SortParameter { get; set; }
+        /// <summary>
+        /// FindXXX(Order order)
+        /// </summary>
+        public ParameterInfo OrderParameter { get; set; }
+
+        /// <summary>
+        /// FindXXX(Orders orders)
+        /// </summary>
+        public ParameterInfo OrdersParameter { get; set; }
+
         public ParameterInfo PageRequestParameter { get; set; }
 
         private Type returnType;
