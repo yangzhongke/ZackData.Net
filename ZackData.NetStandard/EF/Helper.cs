@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using System.Linq;
 using System.Linq.Expressions;
+using ZackData.NetStandard.Exceptions;
 
 namespace ZackData.NetStandard.EF
 {
@@ -48,6 +49,55 @@ namespace ZackData.NetStandard.EF
             sbCode.Append(string.Join(",", argsCode));
             sbCode.Append(")");
             return sbCode.ToString();
+        }
+
+        /*
+        /// <summary>
+        /// Get argumentValues(order kept) except for the type of Order,Sort and PageRequest
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <returns></returns>
+        static ParameterInfo[] GetPlainParameters(MethodInfo method)
+        {
+            var parameters = method.GetParameters();
+            return parameters.Where(p => p.ParameterType != typeof(Sort) && p.ParameterType != typeof(Order)
+            && p.ParameterType != typeof(PageRequest)).ToArray();
+        }  */
+
+        /// <summary>
+        ///  Try to find a parameterInfo of type "type",
+        /// if not find one, return null,
+        /// only zero or one parameter of the type is allowed, if more than one are found, Exception will be thrown
+        /// </summary>
+        /// <typeparam name="TParameter"></typeparam>
+        /// <param name="method"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static ParameterInfo FindSingleParameterOfType(MethodInfo method,Type type)
+        {
+            var parameters = method.GetParameters();
+            int paramIndex = -1;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var parameter = parameters[i];
+                if (parameter.ParameterType == type)
+                {
+                    //another parameter of type TParameter is found
+                    if (paramIndex >= 0)
+                    {
+                        throw new ConventionException($"only zero or one parameter of the type {type} is allowed");
+                    }
+                    paramIndex = i;
+                }
+            }
+            if (paramIndex >= 0)
+            {
+                return parameters[paramIndex];
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public static IOrderedQueryable<TEntity> OrderBy<TEntity>(IQueryable<TEntity> source, string sortProperty, bool isAscending)

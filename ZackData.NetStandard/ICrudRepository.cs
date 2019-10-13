@@ -7,7 +7,7 @@ namespace ZackData.NetStandard
 {
     public interface ICrudRepository<TEntity, ID> where TEntity:class
     {
-        IQueryable<TEntity> Find(Sort sort, string predicate, params object[] args);
+        IQueryable<TEntity> Find(Order[] orders, string predicate, params object[] args);
 
         Page<TEntity> Find(PageRequest pageRequest, string predicate, params object[] args);
 
@@ -27,8 +27,7 @@ namespace ZackData.NetStandard
 
         IQueryable<TEntity> FindAll();
 
-        IQueryable<TEntity> FindAll(Sort sort);
-        //Page<T> FindAll(PageRequest pageRequest);
+        IQueryable<TEntity> FindAll(Order[] orders);
 
         IQueryable<TEntity> FindAllById(IEnumerable<ID> ids);
 

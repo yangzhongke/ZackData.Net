@@ -15,16 +15,16 @@ namespace ZackData.NetStandard
     {
         protected Func<DbContext> dbContextCreator;
 
-        private IEntityType entityType;
-        private string tableName;
-        private IProperty[] pkProperties;
+        private readonly IEntityType entityType;
+        private readonly string tableName;
+        private readonly IProperty[] primaryKeyProperties;
 
         public BaseEFCrudRepository(Func<DbContext> dbContextCreator)
         {
             this.dbContextCreator = dbContextCreator;
             this.entityType = dbContextCreator().Model.FindEntityType(typeof(TEntity));
             this.tableName = this.entityType.Relational().TableName;
-            this.pkProperties = this.entityType.FindPrimaryKey().Properties.ToArray();
+            this.primaryKeyProperties = this.entityType.FindPrimaryKey().Properties.ToArray();
         }
 
         protected DbSet<TEntity> DbSet
@@ -32,30 +32,6 @@ namespace ZackData.NetStandard
             get
             {
                 return this.dbContextCreator().Set<TEntity>();
-            }
-        }
-            
-        protected IEntityType EntityType
-        {
-            get
-            {
-                return this.entityType;
-            }
-        }
-
-        protected string TableName
-        {
-            get
-            {
-                return this.tableName;
-            }
-        }
-
-        protected IProperty[] PrimaryKeyProperties
-        {
-            get
-            {
-                return this.pkProperties;
             }
         }
 
@@ -98,15 +74,15 @@ namespace ZackData.NetStandard
         /// <returns></returns>
         protected string TranslatePropertyNameToColumnName(string propertyName)
         {
-            var prop = EntityType.FindProperty(propertyName);
+            var prop = this.entityType.FindProperty(propertyName);
             if(prop!=null)
             {
                 return prop.Relational().ColumnName;
             }
             else
             {
-                var property = EntityType.GetProperties()
-                    .SingleOrDefault(p => p.Relational().ColumnName.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+                var property = this.entityType.GetProperties()
+                    .SingleOrDefault(p => p.Relational().ColumnName.EqualsIgnoreCase(propertyName));
                 if (property!=null)
                 {
                     throw new ArgumentException($"Don't use FieldName-{propertyName}, please use PropertyName-{property.Name}", 
@@ -119,6 +95,12 @@ namespace ZackData.NetStandard
             }
         }
 
+        /// <summary>
+        /// Execute Delete from this table
+        /// </summary>
+        /// <param name="whereSQL">Native SQL.don't use delete or where,please directly use the condition 'Id>5 and Age<5'</param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         protected int Delete(string whereSQL,params object[] args)
         {
             whereSQL = whereSQL.Trim();
@@ -135,16 +117,14 @@ namespace ZackData.NetStandard
 
         public int DeleteAll(IEnumerable<TEntity> entities)
         {
-            IEntityType eType = this.EntityType;
+            IEntityType eType = this.entityType;
             //Column Names of Primarykeys 
-            string[] pkColNames =  this.PrimaryKeyProperties.Select(p=>p.Relational().ColumnName).ToArray();
-            //If single primary Key,using SQL to delete
-
-            //int,long,guid
+            string[] pkColNames =  this.primaryKeyProperties.Select(p=>p.Relational().ColumnName).ToArray();
+            //If single primary Key,using SQL to do bulky deletion, which is more effective
             if(pkColNames.Length==1)
             {
                 //Property name of Primarykeys
-                string pkPropName = this.PrimaryKeyProperties.Single().Name;
+                string pkPropName = this.primaryKeyProperties.Single().Name;
                 PropertyInfo propPK = typeof(TEntity).GetProperty(pkPropName);
                 List<ID> ids = new List<ID>();//id values to be deleted
                 foreach (var e in entities)
@@ -154,7 +134,7 @@ namespace ZackData.NetStandard
                 }
                 //Batch Delete SQL
                 StringBuilder sbSQL = new StringBuilder();
-                sbSQL.Append("delete from ").Append(this.TableName).Append(" where ")
+                sbSQL.Append("delete from ").Append(this.tableName).Append(" where ")
                         .Append(pkColNames[0]).Append(" in (");
                 for(int i=0;i<ids.Count;i++)
                 {
@@ -178,7 +158,7 @@ namespace ZackData.NetStandard
 
         public void DeleteById(ID id)
         {
-            if (!PrimaryKeyProperties.Any(k => k.Name == "Id"))
+            if (!primaryKeyProperties.Any(k => k.Name == "Id"))
             {
                 throw new PropertyNotFoundException("There is no Property named Id");
             }
@@ -192,7 +172,7 @@ namespace ZackData.NetStandard
 
         public bool ExistsById(ID id)
         {
-            if (!PrimaryKeyProperties.Any(k => k.Name == "Id"))
+            if (!primaryKeyProperties.Any(k => k.Name == "Id"))
             {
                 throw new PropertyNotFoundException("There is no Property named Id");
             }
@@ -204,9 +184,9 @@ namespace ZackData.NetStandard
             return this.DbSet;
         }
 
-        public IQueryable<TEntity> FindAll(Sort sort)
+        public IQueryable<TEntity> FindAll(Order[] orders)
         {
-            return this.Find(sort, null);
+            return this.Find(orders, null);
         }
 
         public IQueryable<TEntity> FindAllById(IEnumerable<ID> ids)
@@ -239,14 +219,15 @@ namespace ZackData.NetStandard
             return DbSet.Where(predicate, args).SingleOrDefault();
         }
 
-        public IQueryable<TEntity> Find(Sort sort, string predicate, params object[] args)
+
+        public IQueryable<TEntity> Find(Order[] orders, string predicate, params object[] args)
         {
             IQueryable<TEntity> result = this.DbSet.Where(predicate,args);
-            if (sort != null && sort.Orders.Count > 0)
+            if (orders != null && orders.Length > 0)
             {
-                var firstOrder = sort.Orders.First();
+                var firstOrder = orders.First();
                 var orderedResult = Helper.OrderBy(result, firstOrder.Property, firstOrder.Ascending);
-                foreach (var order in sort.Orders.Skip(1))
+                foreach (var order in orders.Skip(1))
                 {
                     orderedResult = Helper.ThenBy(orderedResult, order.Property, order.Ascending);
                 }
@@ -264,12 +245,12 @@ namespace ZackData.NetStandard
             Page<TEntity> page = new Page<TEntity>();
 
             IQueryable<TEntity> result = this.DbSet.Where(predicate, args);
-            var sort = pageRequest.Sort;
-            if (sort != null && sort.Orders.Count > 0)
+            var orders = pageRequest.Orders;
+            if (orders != null && orders.Length > 0)
             {
-                var firstOrder = sort.Orders.First();
+                var firstOrder = orders.First();
                 var orderedResult = Helper.OrderBy(result, firstOrder.Property, firstOrder.Ascending);
-                foreach (var order in sort.Orders.Skip(1))
+                foreach (var order in orders.Skip(1))
                 {
                     orderedResult = Helper.ThenBy(orderedResult, order.Property, order.Ascending);
                 }

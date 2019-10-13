@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ZackData.NetStandard
 {
-    public enum SorDirection
+    public enum OrderDirection
     {
         ASC, DESC
     }

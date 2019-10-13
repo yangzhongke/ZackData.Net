@@ -11,6 +11,6 @@ namespace ZackData.NetStandard
         /// </summary>
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
-        public Sort Sort { get; set; }
+        public Order[] Orders { get; set; }
     }
 }

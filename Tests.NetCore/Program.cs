@@ -1,18 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.EntityFrameworkCore.Query.Expressions;
-using Microsoft.EntityFrameworkCore.Query.ExpressionTranslators;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using Microsoft.EntityFrameworkCore.Query.Sql;
-using Microsoft.EntityFrameworkCore.Storage;
-using Remotion.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Dynamic.Core;
-using System.Linq.Dynamic.Core.Parser;
-using System.Linq.Expressions;
+﻿using System;
+using System.Text.RegularExpressions;
 using YouZack.Entities;
 using ZackData.NetStandard;
 using ZackData.NetStandard.EF;
@@ -33,10 +20,19 @@ namespace Tests.NetCore
                 {
                     Console.WriteLine(b);
                 }*/
-                BaseEFCrudRepository<Book, long> rep = new BaseEFCrudRepository<Book, long>(()=>ctx);
+                RepositoryStubGenerator gen = new RepositoryStubGenerator(() => ctx);
+                var rep = gen.Create<Book,long,IBookRepository>();
+                //var rep = new BaseEFCrudRepository<Book, long>(() => ctx);
+
+                var books = rep.FindFoo(1, "3About Microsoft", Order.Asc("Priace"));
+                foreach(var b in books)
+                {
+                    Console.WriteLine(b);
+                }
+                Console.WriteLine("ok");
                 /*
                 PageRequest pageReq = new PageRequest { PageNumber = 1, PageSize = 3, 
-                    Sort = new Sort(Order.Desc("Price")) };*/
+                    Sort = new Sort(Order.Desc("Price")) };
                 PageRequest pageReq = new PageRequest
                 {
                     PageNumber = 1,
@@ -52,9 +48,9 @@ namespace Tests.NetCore
                 Console.WriteLine(page.TotalElements);
                 Console.WriteLine(page.PageNumber);
                 Console.WriteLine(page.PageSize);
-                Console.WriteLine(page.TotalPages);
-            }                
-            Console.WriteLine("ok");
+                Console.WriteLine(page.TotalPages);*/
+            }
+            
             Console.Read();
         }
     }
