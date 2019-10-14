@@ -12,7 +12,7 @@ namespace ZackData.NetStandard.Parsers
 
         public enum OperatorType
         {
-            Add,Or
+            And,Or
         }
     }
 }

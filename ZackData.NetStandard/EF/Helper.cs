@@ -23,11 +23,11 @@ namespace ZackData.NetStandard.EF
         {
             //IEnumerable`1  --> IEnumerable
             StringBuilder sbCode = new StringBuilder(type.Namespace+"."+type.Name.Split('`')[0]);
-
-            if (type.IsArray)
+           /*
+            if (type.IsArray&&type.GetArrayRank()==1)
             {
                 sbCode.Append("[]");
-            }
+            }*/
             var genericTypeNames = type.GenericTypeArguments.Select(t=>t.Namespace+"."+t.Name);
             if(genericTypeNames.Any())
             {
