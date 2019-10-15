@@ -2,16 +2,15 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.IO;
-using System.Text;
-using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Reflection;
+using System.Text;
 using ZackData.NetStandard.Exceptions;
-using System.Text.RegularExpressions;
 using ZackData.NetStandard.Parsers;
-using System.Diagnostics;
 
 namespace ZackData.NetStandard.EF
 {
@@ -423,6 +422,10 @@ namespace ZackData.NetStandard.EF
             }
             else if(findMethodBaseInfo.OrderParameter!=null)
             {
+                if (findMethodBaseInfo.OrderInMethodName!=null)
+                {
+                    throw new ConventionException($"the name of method {method} alread contains OrderBy, so it is not allowed to contains parameter of type Order or Order[]");
+                }
                 //public IQueryable<TEntity> Find(Order order, string predicate, params object[] args)
                 sbCode.Append("return this.Find(").Append(findMethodBaseInfo.OrderParameter.Name)
                     .Append(",").Append("\"").Append(predicate);
@@ -435,8 +438,25 @@ namespace ZackData.NetStandard.EF
             }
             else if (findMethodBaseInfo.OrdersParameter != null)
             {
+                if (findMethodBaseInfo.OrderInMethodName != null)
+                {
+                    throw new ConventionException($"the name of method {method} alread contains OrderBy, so it is not allowed to contains parameter of type Order or Order[]");
+                }
                 //public IQueryable<TEntity> Find(Order[] order, string predicate, params object[] args)
                 sbCode.Append("return this.Find(").Append(findMethodBaseInfo.OrdersParameter.Name)
+                    .Append(",").Append("\"").Append(predicate);
+                sbCode.Append("\"");
+                if (plainActualArguments.Count > 0)
+                {
+                    sbCode.Append(",");
+                }
+                sbCode.Append(string.Join(",", plainActualArguments)).AppendLine(");");
+            }
+            else if(findMethodBaseInfo.OrderInMethodName!=null)//FindByPriceOrNameOrderByPrice
+            {
+                Order order = findMethodBaseInfo.OrderInMethodName;
+                sbCode.Append("return this.Find(").Append("new Order(\"").Append(order.Property).Append("\",")
+                    .Append(order.Ascending.ToString().ToLower()).Append(")")
                     .Append(",").Append("\"").Append(predicate);
                 sbCode.Append("\"");
                 if (plainActualArguments.Count > 0)
