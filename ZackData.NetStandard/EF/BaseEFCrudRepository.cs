@@ -44,6 +44,7 @@ namespace ZackData.NetStandard
 
         public IEnumerable<TEntity> AddNew(IEnumerable<TEntity> entities)
         {
+            //todo: optimize it with SqlBulkcopy and MySqlBulkcopy
             DbSet.AddRange(entities);
             SaveChanges();
             return entities;
@@ -211,7 +212,14 @@ namespace ZackData.NetStandard
         
         public IQueryable<TEntity> Find(string predicate, params object[] args)
         {
-            return DbSet.Where(predicate, args);
+            if(string.IsNullOrWhiteSpace(predicate))
+            {
+                return this.DbSet;
+            }
+            else
+            {
+                return DbSet.Where(predicate, args);
+            }
         }
 
         public TEntity FindOne(string predicate, params object[] args)
@@ -225,7 +233,15 @@ namespace ZackData.NetStandard
         }
         public IQueryable<TEntity> Find(Order[] orders, string predicate, params object[] args)
         {
-            IQueryable<TEntity> result = this.DbSet.Where(predicate,args);
+            IQueryable<TEntity> result;
+            if(string.IsNullOrWhiteSpace(predicate))
+            {
+                result = this.DbSet;
+            }
+            else
+            {
+                result = this.DbSet.Where(predicate, args);
+            }
             if (orders != null && orders.Length > 0)
             {
                 var firstOrder = orders.First();
@@ -247,7 +263,16 @@ namespace ZackData.NetStandard
             }
             Page<TEntity> page = new Page<TEntity>();
 
-            IQueryable<TEntity> result = this.DbSet.Where(predicate, args);
+            IQueryable<TEntity> result;
+            if(string.IsNullOrWhiteSpace(predicate))
+            {
+                result = this.DbSet;
+            }
+            else
+            {
+                result = this.DbSet.Where(predicate, args);
+            }
+            
             var orders = pageRequest.Orders;
             if (orders != null && orders.Length > 0)
             {

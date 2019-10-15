@@ -27,5 +27,9 @@ namespace Tests.NetCore
         IQueryable<Book> FindByName(string name);
         IQueryable<Book> FindByAgeOrderByPrice(int age);
         IQueryable<Book> FindByAgeOrderByPriceDesc(int age);
+
+        IQueryable<Book> FindOrderByPublishDate();
+
+        
     }
 }

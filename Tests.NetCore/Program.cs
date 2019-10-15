@@ -31,7 +31,10 @@ namespace Tests.NetCore
                 //var books = rep.FindByPrice(33);
                 //var books = rep.FindByPriceIsNull();
                 //var books = rep.FindByPriceAndName(33, "1Learn C");
-                var books = rep.FindByPriceOrNameOrderByPrice(33, "1Learn C");
+                //var books = rep.FindByPriceOrNameOrderByPrice(33, "1Learn C");
+                //todo:test Paging and single return value
+                //todo: support deleteByName,deleteByNameOrAge,DeleteByNameLike
+                var books = rep.FindOrderByPublishDate();
                 foreach (var b in books)
                 {
                     Console.WriteLine(b);

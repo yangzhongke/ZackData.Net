@@ -42,10 +42,6 @@ namespace ZackData.NetStandard.Parsers
                 {
                     throw new ConventionException($"Method {findMethodName} not comply with the pattern {reFindMethod}");
                 }
-                if (!groupPropertyPart.Success)//no 'By', like FindOrderByPrice
-                {
-                    findMethodBaseInfo = new FindWithoutByMethodInfo();
-                }
                 var matchFindMethod_ByProperties = reByProperties.Match(groupPropertyPart.Value);
                 var matchFindMethod_PropertyTerm = rePropertyTerm.Match(groupPropertyPart.Value);
 
@@ -85,7 +81,10 @@ namespace ZackData.NetStandard.Parsers
                         findMethodBaseInfo = onePropMethodInfo;
                     }
                 }
-
+                else if (!groupPropertyPart.Success)//no 'By', like FindOrderByPrice
+                {
+                    findMethodBaseInfo = new FindWithoutByMethodInfo();
+                }
                 else
                 {
                     throw new ConventionException($"{groupPropertyPart.Value} not comply with the pattern {reByProperties} nor {rePropertyTerm}");
