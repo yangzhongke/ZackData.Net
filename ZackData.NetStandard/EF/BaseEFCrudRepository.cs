@@ -219,7 +219,10 @@ namespace ZackData.NetStandard
             return DbSet.Where(predicate, args).SingleOrDefault();
         }
 
-
+        public IQueryable<TEntity> Find(Order order, string predicate, params object[] args)
+        {
+            return Find(new Order[] { order }, predicate, args);
+        }
         public IQueryable<TEntity> Find(Order[] orders, string predicate, params object[] args)
         {
             IQueryable<TEntity> result = this.DbSet.Where(predicate,args);

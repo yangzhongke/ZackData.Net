@@ -25,7 +25,7 @@ namespace Tests.NetCore
                 //var rep = new BaseEFCrudRepository<Book, long>(() => ctx);
                 //var books = rep.Find("Name.Contains(\"m\")");
                 //var books = rep.Find("!(Id in @0)",new long[] { 3,5});
-                var books = rep.FindByPriceIsNull();
+                var books = rep.FindByPriceOrName(33, "1Learn C");
                 foreach (var b in books)
                 {
                     Console.WriteLine(b);

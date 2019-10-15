@@ -24,6 +24,9 @@ namespace ZackData.NetStandard.Parsers
         /// </summary>
         public ParameterInfo OrdersParameter { get; set; }
 
+        //parameters except ones that is of type PageRequest,Order, or Order[]
+        public ParameterInfo[] PlainParameters { get; set; }
+
         public ParameterInfo PageRequestParameter { get; set; }
 
         private Type returnType;

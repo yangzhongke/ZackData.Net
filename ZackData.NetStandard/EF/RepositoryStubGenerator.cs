@@ -11,6 +11,7 @@ using System.Reflection;
 using ZackData.NetStandard.Exceptions;
 using System.Text.RegularExpressions;
 using ZackData.NetStandard.Parsers;
+using System.Diagnostics;
 
 namespace ZackData.NetStandard.EF
 {
@@ -136,30 +137,67 @@ namespace ZackData.NetStandard.EF
                     throw new ConventionException($"since there is a parameter '{findMethodBaseInfo.PageRequestParameter.Name}' of type PageRequest, the return type of {method} must be Page<T>");
                 }
             }
+
             StringBuilder sbCode = new StringBuilder();
             sbCode.AppendLine(Helper.CreateCodeFromMethodDelaration(method));
             sbCode.AppendLine("{");
+            string predicate;//where condition
+            List<string> plainActualArguments = new List<string>();//plain Actual Arguments(PageRequest,Order, Order[] and string predicate ) those will be passed to Find()
+            var plainFormalParameterNames = findMethodBaseInfo.PlainParameters.Select(p=>p.Name);//plain Formal Parameters of current method
 
             //begin calculate the predicate
-            string predicate;
-            if(findMethodBaseInfo is FindByPredicateMethodInfo)
+            if (findMethodBaseInfo is FindByPredicateMethodInfo)
             {
                 var predicateMethodInfo = (FindByPredicateMethodInfo)findMethodBaseInfo;
                 predicate = predicateMethodInfo.Predicate;
+                /*
+                 * For example
+                 * @Predicate("id=@0 and name=@1 or age>@2")
+                 * FindFoo(long id,string name,int age)
+                 */ 
+                plainActualArguments.AddRange(plainFormalParameterNames);                               
             }
             else if (findMethodBaseInfo is FindWithoutByMethodInfo)
             {
                 predicate = null;
+                if (plainFormalParameterNames.Count() > 0)
+                {
+                    Debug.Write($"It is expected that {method} has 0 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                }
             }
             else if (findMethodBaseInfo is FindByTwoPropertiesMethodInfo)
             {
                 var twoPInfo = (FindByTwoPropertiesMethodInfo)findMethodBaseInfo;
                 predicate = twoPInfo.PropertyName1+"=@0 "+twoPInfo.Operator+" "+twoPInfo.PropertyName2+"=@1";
+                if(plainFormalParameterNames.Count()<2)
+                {
+                    throw new ConventionException($"It is expected that {method} has 2 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                }
+                else if(plainFormalParameterNames.Count()>2)
+                {
+                    Debug.Write($"It is expected that {method} has 2 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                }
+                else
+                {
+                    plainActualArguments.AddRange(plainFormalParameterNames);
+                }
             }
             else if (findMethodBaseInfo is FindByOnePropertyMethodInfo)
             {
                 var findByOnePropertyMethodInfo = (FindByOnePropertyMethodInfo)findMethodBaseInfo;
                 predicate = findByOnePropertyMethodInfo.PropertyName + "=@0";
+                if (plainFormalParameterNames.Count() < 1)
+                {
+                    throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                }
+                else if (plainFormalParameterNames.Count() > 1)
+                {
+                    Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                }
+                else
+                {
+                    plainActualArguments.Add(plainFormalParameterNames.Single());
+                }
             }
             else if (findMethodBaseInfo is FindByPropertyVerbMethodInfo)
             {
@@ -170,48 +208,196 @@ namespace ZackData.NetStandard.EF
                 {
                     case PropertyVerb.Between:
                         predicate = pvInfo.PropertyName + ">@0 and "+ pvInfo.PropertyName+"<@1";
+                        if (plainFormalParameterNames.Count() < 2)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 2)
+                        {
+                            Debug.Write($"It is expected that {method} has 2 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.Contains:
                         predicate = pvInfo.PropertyName + ".Contains(@0)";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.EndsWith:
                         predicate = pvInfo.PropertyName + ".EndsWith(@0)";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.Equals:
                         predicate = pvInfo.PropertyName + "=@0";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.False:
                         predicate = pvInfo.PropertyName + "=false";
+                        if (plainFormalParameterNames.Count() > 0)
+                        {
+                            Debug.Write($"It is expected that {method} has 0 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
                         break;
                     case PropertyVerb.GreaterThan:
                         predicate = pvInfo.PropertyName + ">@0";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.GreaterThanEqual:
                         predicate = pvInfo.PropertyName + ">=@0";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.In:
                         predicate = pvInfo.PropertyName + " in @0";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.IsNotNull:
                         predicate = pvInfo.PropertyName + "!=null";
+                        if (plainFormalParameterNames.Count() > 0)
+                        {
+                            Debug.Write($"It is expected that {method} has 0 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
                         break;
                     case PropertyVerb.IsNull:
                         predicate = pvInfo.PropertyName + "==null";
+                        if (plainFormalParameterNames.Count() > 0)
+                        {
+                            Debug.Write($"It is expected that {method} has 0 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
                         break;
                     case PropertyVerb.LessThan:
                         predicate = pvInfo.PropertyName + "<@0";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.LessThanEqual:
                         predicate = pvInfo.PropertyName + "<=@0";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.NotEquals:
                         predicate = pvInfo.PropertyName + "!=@0";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.StartsWith:
                         predicate = pvInfo.PropertyName + ".StartsWith(@0)";
+                        if (plainFormalParameterNames.Count() < 1)
+                        {
+                            throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
+                        }
+                        else if (plainFormalParameterNames.Count() > 1)
+                        {
+                            Debug.Write($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
+                        else
+                        {
+                            plainActualArguments.AddRange(plainFormalParameterNames);
+                        }
                         break;
                     case PropertyVerb.True:
                         predicate = pvInfo.PropertyName + "=true";
+                        if (plainFormalParameterNames.Count() > 0)
+                        {
+                            Debug.Write($"It is expected that {method} has 0 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
+                        }
                         break;
                     default:
                         throw new ConventionException($"Unkown PropertyVerb {pvInfo.Verb}");
@@ -223,89 +409,54 @@ namespace ZackData.NetStandard.EF
             }
             //end calculate the predicate
 
-            //begin orgnize the parameters
-            if (findMethodBaseInfo is FindByPredicateMethodInfo)
+            if(findMethodBaseInfo.PageRequestParameter!=null)
             {
-                var predicateMethodInfo = (FindByPredicateMethodInfo)findMethodBaseInfo;
-                predicate = predicateMethodInfo.Predicate;
-            }
-            else if (findMethodBaseInfo is FindWithoutByMethodInfo)
-            {
-                predicate = null;
-            }
-            else if (findMethodBaseInfo is FindByTwoPropertiesMethodInfo)
-            {
-                var twoPInfo = (FindByTwoPropertiesMethodInfo)findMethodBaseInfo;
-                predicate = twoPInfo.PropertyName1 + "=@0 " + twoPInfo.Operator + " " + twoPInfo.PropertyName2 + "=@1";
-            }
-            else if (findMethodBaseInfo is FindByOnePropertyMethodInfo)
-            {
-                var findByOnePropertyMethodInfo = (FindByOnePropertyMethodInfo)findMethodBaseInfo;
-                predicate = findByOnePropertyMethodInfo.PropertyName + "=@0";
-            }
-            else if (findMethodBaseInfo is FindByPropertyVerbMethodInfo)
-            {
-                var pvInfo = (FindByPropertyVerbMethodInfo)findMethodBaseInfo;
-                //todo: Use FromSQL to support functions that are not supported by System.Linq.Dynamic.Core
-                //such as 'like','not like','not in'
-                switch (pvInfo.Verb)
+                //Page<TEntity> Find(PageRequest pageRequest, string predicate, params object[] args)
+                sbCode.Append("return this.Find(").Append(findMethodBaseInfo.PageRequestParameter.Name)
+                    .Append(",").Append("\"").Append(predicate);
+                sbCode.Append("\"");
+                if(plainActualArguments.Count>0)
                 {
-                    case PropertyVerb.Between:
-                        predicate = pvInfo.PropertyName + ">@0 and " + pvInfo.PropertyName + "<@1";
-                        break;
-                    case PropertyVerb.Contains:
-                        predicate = pvInfo.PropertyName + ".Contains(@0)";
-                        break;
-                    case PropertyVerb.EndsWith:
-                        predicate = pvInfo.PropertyName + ".EndsWith(@0)";
-                        break;
-                    case PropertyVerb.Equals:
-                        predicate = pvInfo.PropertyName + "=@0";
-                        break;
-                    case PropertyVerb.False:
-                        predicate = pvInfo.PropertyName + "=false";
-                        break;
-                    case PropertyVerb.GreaterThan:
-                        predicate = pvInfo.PropertyName + ">@0";
-                        break;
-                    case PropertyVerb.GreaterThanEqual:
-                        predicate = pvInfo.PropertyName + ">=@0";
-                        break;
-                    case PropertyVerb.In:
-                        predicate = pvInfo.PropertyName + " in @0";
-                        break;
-                    case PropertyVerb.IsNotNull:
-                        predicate = pvInfo.PropertyName + "!=null";
-                        break;
-                    case PropertyVerb.IsNull:
-                        predicate = pvInfo.PropertyName + "==null";
-                        break;
-                    case PropertyVerb.LessThan:
-                        predicate = pvInfo.PropertyName + "<@0";
-                        break;
-                    case PropertyVerb.LessThanEqual:
-                        predicate = pvInfo.PropertyName + "<=@0";
-                        break;
-                    case PropertyVerb.NotEquals:
-                        predicate = pvInfo.PropertyName + "!=@0";
-                        break;
-                    case PropertyVerb.StartsWith:
-                        predicate = pvInfo.PropertyName + ".StartsWith(@0)";
-                        break;
-                    case PropertyVerb.True:
-                        predicate = pvInfo.PropertyName + "=true";
-                        break;
-                    default:
-                        throw new ConventionException($"Unkown PropertyVerb {pvInfo.Verb}");
+                    sbCode.Append(",");
+                }                
+                sbCode.Append(string.Join(",",plainActualArguments)).AppendLine(");");
+            }
+            else if(findMethodBaseInfo.OrderParameter!=null)
+            {
+                //public IQueryable<TEntity> Find(Order order, string predicate, params object[] args)
+                sbCode.Append("return this.Find(").Append(findMethodBaseInfo.OrderParameter.Name)
+                    .Append(",").Append("\"").Append(predicate);
+                sbCode.Append("\"");
+                if (plainActualArguments.Count > 0)
+                {
+                    sbCode.Append(",");
                 }
+                sbCode.Append(string.Join(",", plainActualArguments)).AppendLine(");");
+            }
+            else if (findMethodBaseInfo.OrdersParameter != null)
+            {
+                //public IQueryable<TEntity> Find(Order[] order, string predicate, params object[] args)
+                sbCode.Append("return this.Find(").Append(findMethodBaseInfo.OrdersParameter.Name)
+                    .Append(",").Append("\"").Append(predicate);
+                sbCode.Append("\"");
+                if (plainActualArguments.Count > 0)
+                {
+                    sbCode.Append(",");
+                }
+                sbCode.Append(string.Join(",", plainActualArguments)).AppendLine(");");
             }
             else
             {
-                throw new ApplicationException($"type of findMethodBaseInfo is unknown, {findMethodBaseInfo.GetType()}");
+                //public IQueryable<TEntity> Find(string predicate, params object[] args)
+                sbCode.Append("return this.Find(")
+                    .Append("\"").Append(predicate);
+                sbCode.Append("\"");
+                if (plainActualArguments.Count > 0)
+                {
+                    sbCode.Append(",");
+                }
+                sbCode.Append(string.Join(",", plainActualArguments)).AppendLine(");");
             }
-            //end orgnize the parameters
-
-            sbCode.AppendLine("{return this.Find(\""+predicate+"\");}");
 
             sbCode.AppendLine("}");
             return sbCode.ToString();

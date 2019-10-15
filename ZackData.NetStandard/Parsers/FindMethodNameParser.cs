@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using ZackData.NetStandard;
 using ZackData.NetStandard.EF;
 using ZackData.NetStandard.Exceptions;
 
@@ -34,8 +32,9 @@ namespace ZackData.NetStandard.Parsers
             if (predicateAttr!=null)
             {
                 //if Find** with PredicateAttribute, the 'ByXXX'  should be ignored, but OrderBy,PageRequest,and Sort should not be ignored,
-                findMethodBaseInfo = new FindByPredicateMethodInfo();
-                ((FindByPredicateMethodInfo)findMethodBaseInfo).Predicate = predicateAttr.Predicate;
+                var predicatMethodInfo = new FindByPredicateMethodInfo();
+                predicatMethodInfo.Predicate = predicateAttr.Predicate;
+                findMethodBaseInfo = predicatMethodInfo;                
             }
             else
             {
@@ -49,7 +48,19 @@ namespace ZackData.NetStandard.Parsers
                 }
                 var matchFindMethod_ByProperties = reByProperties.Match(groupPropertyPart.Value);
                 var matchFindMethod_PropertyTerm = rePropertyTerm.Match(groupPropertyPart.Value);
-                if(matchFindMethod_ByProperties.Success)//NameOrAge,NameAndAge,Name,Age
+
+                //matchFindMethod_PropertyTerm has a higher priority than matchFindMethod_ByProperties
+                //like : FindByPriceIsNull
+                if (matchFindMethod_PropertyTerm.Success)//NameLike, AgeGreaterThan
+                {
+                    var groupPropertyName = matchFindMethod_PropertyTerm.Groups[1];
+                    var groupPropertyVerb = matchFindMethod_PropertyTerm.Groups[2];
+                    var propVerbMethodInfo = new FindByPropertyVerbMethodInfo();
+                    propVerbMethodInfo.PropertyName = groupPropertyName.Value;
+                    propVerbMethodInfo.Verb = ParserHelper.ParsePropertyVerb(groupPropertyVerb.Value);
+                    findMethodBaseInfo = propVerbMethodInfo;
+                }
+                else if(matchFindMethod_ByProperties.Success)//NameOrAge,NameAndAge,Name,Age
                 {
                     var groupProperty1 = matchFindMethod_ByProperties.Groups["Property1"];
                     var groupOperator = matchFindMethod_ByProperties.Groups["Operator"];
@@ -74,15 +85,7 @@ namespace ZackData.NetStandard.Parsers
                         findMethodBaseInfo = onePropMethodInfo;
                     }
                 }
-                else if(matchFindMethod_PropertyTerm.Success)//NameLike, AgeGreaterThan
-                {
-                    var groupPropertyName = matchFindMethod_PropertyTerm.Groups[1];
-                    var groupPropertyVerb = matchFindMethod_PropertyTerm.Groups[2];
-                    var propVerbMethodInfo = new FindByPropertyVerbMethodInfo();
-                    propVerbMethodInfo.PropertyName = groupPropertyName.Value;
-                    propVerbMethodInfo.Verb = ParserHelper.ParsePropertyVerb(groupPropertyVerb.Value);
-                    findMethodBaseInfo = propVerbMethodInfo;
-                }
+
                 else
                 {
                     throw new ConventionException($"{groupPropertyPart.Value} not comply with the pattern {reByProperties} nor {rePropertyTerm}");
@@ -129,6 +132,9 @@ namespace ZackData.NetStandard.Parsers
             findMethodBaseInfo.PageRequestParameter= Helper.FindSingleParameterOfType(findMethod, typeof(PageRequest));
             findMethodBaseInfo.MethodName = findMethodName;
             findMethodBaseInfo.ReturnType = findMethod.ReturnType;
+            var specialParamTypes = new Type[] { typeof(PageRequest), typeof(Order), typeof(Order[]) };
+            findMethodBaseInfo.PlainParameters = findMethod.GetParameters()
+                .Where(t => !specialParamTypes.Contains(t.ParameterType)).ToArray();
             return findMethodBaseInfo;
         }
     }
