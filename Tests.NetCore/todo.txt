@@ -6,3 +6,13 @@ order Delete("Author.Id=@aid")
 2. Test on EF Core 3.0 and .Net Framework
 
 3.Support .net framework and Async
+
+4.support single item return value(√)
+5.test all the possibility
+6.support all kinds of countXXX()
+support all kinds of deleteXXX()
+
+zackdata支持原生sql标注执行crud
+写简介文档，发布第一个预览版.文档中提到用ef，提到开发理念:simple，不重新发明轮子，不支持复杂方法名。文档主页用英文，链接到中文版。列一个类似于spring data jpa的支持方法的表格
+要做性能测试，提供和原生ef的对比数据
+

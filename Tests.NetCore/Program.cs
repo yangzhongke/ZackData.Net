@@ -34,12 +34,25 @@ namespace Tests.NetCore
                 //var books = rep.FindByPriceOrNameOrderByPrice(33, "1Learn C");
                 //todo:test Paging and single return value
                 //todo: support deleteByName,deleteByNameOrAge,DeleteByNameLike
-                var books = rep.FindOrderByPublishDate();
+                //var books = rep.FindOrderByPublishDate();
+                /*
+                var books = rep.FindOrderByPublishDate(new PageRequest {PageNumber=0,PageSize=3,Orders=new Order[] { Order.Asc("Price")} });
+                Console.WriteLine(books.PageNumber);
+                Console.WriteLine(books.PageSize);
+                Console.WriteLine(books.TotalElements);
+                Console.WriteLine(books.TotalPages);
+                foreach (var b in books.Content)
+                */
+                //var books = rep.FindByPriceAndNameOrderByPublishDate(33, "2JavaEE Overall");
+                var books = rep.FindByPriceOrName(99, "3About Microsoft",Order.Asc("Price"));
                 foreach (var b in books)
                 {
                     Console.WriteLine(b);
                 }
                 Console.WriteLine("ok");
+
+                var b1 = rep.FindByName(".net core");
+                Console.WriteLine(b1);
 
                 /*
                 var books = rep.FindFoo(1, "3About Microsoft", Order.Asc("Priace"));

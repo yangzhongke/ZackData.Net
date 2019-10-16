@@ -29,35 +29,9 @@ namespace ZackData.NetStandard.Parsers
 
         public ParameterInfo PageRequestParameter { get; set; }
 
-        private Type returnType;
         public Type ReturnType 
-        { 
-            get
-            {
-                return this.returnType;
-            }
-            set
-            {
-                if(value==null)
-                {
-                    throw new ArgumentNullException(nameof(ReturnType));
-                }
-                this.returnType = value;
-                this.ReturnTypeIsEnumerable = false;
-                this.ReturnTypeIsIQueryable = false;
-                this.ReturnTypeIsPage = false;
-                this.ReturnTypeIsSingle = false;
-                if (!value.IsGenericType
-                   || value.GetGenericTypeDefinition() != typeof(Page<>))
-                {
-                    this.ReturnTypeIsPage = true;
-                }
-
-            }
+        {
+            get;set;
         }
-        public bool ReturnTypeIsPage { get; private set; }
-        public bool ReturnTypeIsSingle { get; private set; }
-        public bool ReturnTypeIsEnumerable { get; private set; }
-        public bool ReturnTypeIsIQueryable { get; private set; }
     }
 }

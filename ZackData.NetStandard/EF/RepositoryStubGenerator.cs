@@ -30,7 +30,6 @@ namespace ZackData.NetStandard.EF
                 using System;
                 using System.Collections.Generic;
                 using System.Linq;
-                using System.Linq.Dynamic.Core;
                 using ZackData.NetStandard.Exceptions;
                 using ZackData.NetStandard;");
             string repositoryInterfaceName = typeof(TRepository).Name;
@@ -63,7 +62,7 @@ namespace ZackData.NetStandard.EF
                     string methodName = intfMethod.Name;
                     if(methodName.StartsWithIgnoreCase("Find"))
                     {
-                        sbCode.AppendLine().Append(CreateFindMethod(intfMethod)).AppendLine();
+                        sbCode.AppendLine().Append(CreateFindMethod<TEntity>(intfMethod)).AppendLine();
                     }
                     else if(methodName.StartsWithIgnoreCase("Delete"))
                     {
@@ -123,7 +122,7 @@ namespace ZackData.NetStandard.EF
             }
          }
         
-        private string CreateFindMethod(MethodInfo method)
+        private string CreateFindMethod<TEntity>(MethodInfo method)
         {
             var findMethodBaseInfo = FindMethodNameParser.Parse(method);
             //ReturnType can be Page<T>,IEnumerable<T>,IQueryable<T> or T(single item)
@@ -410,6 +409,14 @@ namespace ZackData.NetStandard.EF
 
             if(findMethodBaseInfo.PageRequestParameter!=null)
             {
+                if(!findMethodBaseInfo.ReturnType.IsGenericType&& findMethodBaseInfo.ReturnType.GetGenericTypeDefinition()!= typeof(Page<>))
+                {
+                    throw new ConventionException($"there is a Parameter of type PageRequest in method {method} , so the return type must be Page<T>");
+                }
+                if(findMethodBaseInfo.OrderParameter!=null|| findMethodBaseInfo.OrdersParameter != null)
+                {
+                    throw new ConventionException($"since there is a Parameter of type PageRequest in method {method} , and there are Sort[] in PageRequest, so it is not allowed to have Sort or Sort[] Parameters in this method");
+                }
                 //Page<TEntity> Find(PageRequest pageRequest, string predicate, params object[] args)
                 sbCode.Append("return this.Find(").Append(findMethodBaseInfo.PageRequestParameter.Name)
                     .Append(",").Append("\"").Append(predicate);
@@ -422,6 +429,10 @@ namespace ZackData.NetStandard.EF
             }
             else if(findMethodBaseInfo.OrderParameter!=null)
             {
+                if (!findMethodBaseInfo.ReturnType.IsGenericType && findMethodBaseInfo.ReturnType.GetGenericTypeDefinition() != typeof(Page<>))
+                {
+                    throw new ConventionException($"there is a Parameter of type PageRequest in method {method} , so the return type must be Page<T>");
+                }
                 if (findMethodBaseInfo.OrderInMethodName!=null)
                 {
                     throw new ConventionException($"the name of method {method} alread contains OrderBy, so it is not allowed to contains parameter of type Order or Order[]");
@@ -467,7 +478,10 @@ namespace ZackData.NetStandard.EF
             }
             else
             {
-                //public IQueryable<TEntity> Find(string predicate, params object[] args)
+                //IQueryable<TEntity> Find(string predicate, params object[] args)
+                //IQueryable<TEntity> FindByPriceAndName(double price,string name)
+                //TEntity FindByPriceAndName(double price,string name)
+
                 sbCode.Append("return this.Find(")
                     .Append("\"").Append(predicate);
                 sbCode.Append("\"");
@@ -475,7 +489,21 @@ namespace ZackData.NetStandard.EF
                 {
                     sbCode.Append(",");
                 }
-                sbCode.Append(string.Join(",", plainActualArguments)).AppendLine(");");
+                sbCode.Append(string.Join(",", plainActualArguments)).Append(")");
+                if(findMethodBaseInfo.ReturnType.IsGenericType
+                    &&findMethodBaseInfo.ReturnType.GetGenericTypeDefinition()==typeof(IQueryable<>))
+                {
+                    //do nothing
+                }
+                else if (findMethodBaseInfo.ReturnType.IsGenericType && findMethodBaseInfo.ReturnType.GetGenericTypeDefinition() == typeof(Page<>))
+                {
+                    throw new ConventionException($"There is no OrderBy in the methodName or parameters in the method {method},so there return type cannot be Page<T>");
+                }
+                else if(findMethodBaseInfo.ReturnType==typeof(TEntity))
+                {
+                    sbCode.Append(".SingleOrDefault()");
+                }
+                sbCode.AppendLine(";");
             }
 
             sbCode.AppendLine("}");
