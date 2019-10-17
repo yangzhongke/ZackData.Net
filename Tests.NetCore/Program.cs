@@ -50,7 +50,7 @@ namespace Tests.NetCore
                     Console.WriteLine(b);
                 }
                 Console.WriteLine("ok");
-
+                gen = new RepositoryStubGenerator(() => ctx);
                 var b1 = rep.FindByName(".net core");
                 Console.WriteLine(b1);
 

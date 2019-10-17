@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -16,6 +17,8 @@ namespace ZackData.NetStandard.EF
 {
     public class RepositoryStubGenerator
     {
+        public static ConcurrentDictionary<string, Type> typesCache = new ConcurrentDictionary<string,Type>();
+
         private Func<DbContext> dbContextCreator;
         public RepositoryStubGenerator(Func<DbContext> dbContextCreator)
         {
@@ -25,6 +28,21 @@ namespace ZackData.NetStandard.EF
         public TRepository Create<TEntity, ID, TRepository>() where TEntity : class
             where TRepository : class
         {
+            string cacheKey = typeof(TEntity) + "." + typeof(ID) + "." + typeof(TRepository);
+            Type repositoryImplType;
+            if (!typesCache.TryGetValue(cacheKey, out repositoryImplType))
+            {
+                repositoryImplType = BuildRepositoryImplType<TEntity, ID, TRepository>();
+                typesCache[cacheKey] = repositoryImplType;
+            }            
+            return (TRepository)Activator.CreateInstance(repositoryImplType, this.dbContextCreator);
+        }
+
+        private Type BuildRepositoryImplType<TEntity, ID, TRepository>()
+            where TEntity : class
+            where TRepository : class
+        {
+            Type repositoryImplType;
             StringBuilder sbCode = new StringBuilder();
             sbCode.AppendLine(@"using Microsoft.EntityFrameworkCore;
                 using System;
@@ -52,27 +70,27 @@ namespace ZackData.NetStandard.EF
 
             //if the customed IXXXRepository has customed parent interface,like IMyCrudRepository
             Helper.GetAllParentInterface(typeof(TRepository), interfaces);
-            interfaces.Remove(typeof(ICrudRepository<TEntity,ID>));//don't implement methods of ICrudRepository
+            interfaces.Remove(typeof(ICrudRepository<TEntity, ID>));//don't implement methods of ICrudRepository
             //because the methods of ICrudRepository already are implemented by BaseEFCrudRepository
 
             foreach (var intfType in interfaces)
             {
-                foreach(var intfMethod in intfType.GetMethods())
+                foreach (var intfMethod in intfType.GetMethods())
                 {
                     string methodName = intfMethod.Name;
-                    if(methodName.StartsWithIgnoreCase("Find"))
+                    if (methodName.StartsWithIgnoreCase("Find"))
                     {
                         sbCode.AppendLine().Append(CreateFindMethod<TEntity>(intfMethod)).AppendLine();
                     }
-                    else if(methodName.StartsWithIgnoreCase("Delete"))
+                    else if (methodName.StartsWithIgnoreCase("Delete"))
                     {
 
                     }
-                    else if(methodName.StartsWithIgnoreCase("Update"))
+                    else if (methodName.StartsWithIgnoreCase("Update"))
                     {
 
                     }
-                    else if(methodName.StartsWithIgnoreCase("Count"))
+                    else if (methodName.StartsWithIgnoreCase("Count"))
                     {
 
                     }
@@ -93,7 +111,7 @@ namespace ZackData.NetStandard.EF
             //todo 2:use Emit instead of Roslyn
             var currentAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             List<MetadataReference> metaReferences = new List<MetadataReference>();
-            foreach(var asm in currentAssemblies)
+            foreach (var asm in currentAssemblies)
             {
                 if (asm.IsDynamic) continue;
                 metaReferences.Add(MetadataReference.CreateFromFile(asm.Location));
@@ -102,14 +120,14 @@ namespace ZackData.NetStandard.EF
 
             var syntaxTree = SyntaxFactory.ParseSyntaxTree(sbCode.ToString());
             CSharpCompilationOptions compilationOpt = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-            var compilation = CSharpCompilation.Create(repositoryImplAssemblyName,new SyntaxTree[] { syntaxTree }, metaReferences, compilationOpt);
+            var compilation = CSharpCompilation.Create(repositoryImplAssemblyName, new SyntaxTree[] { syntaxTree }, metaReferences, compilationOpt);
             using (var ms = new MemoryStream())
             {
                 var emitResult = compilation.Emit(ms);
-                if(!emitResult.Success)
+                if (!emitResult.Success)
                 {
                     StringBuilder sbError = new StringBuilder();
-                    foreach(var diag in emitResult.Diagnostics)
+                    foreach (var diag in emitResult.Diagnostics)
                     {
                         sbError.AppendLine(diag.GetMessage());
                     }
@@ -117,11 +135,12 @@ namespace ZackData.NetStandard.EF
                 }
                 ms.Position = 0;
                 Assembly asm = Assembly.Load(ms.ToArray());
-                Type repositoryImplType = asm.GetType($"{repositoryInterfaceNamespace}.{repositoryImplName}");
-                return (TRepository)Activator.CreateInstance(repositoryImplType,this.dbContextCreator);
+                repositoryImplType = asm.GetType($"{repositoryInterfaceNamespace}.{repositoryImplName}");
             }
-         }
-        
+
+            return repositoryImplType;
+        }
+
         private string CreateFindMethod<TEntity>(MethodInfo method)
         {
             var findMethodBaseInfo = FindMethodNameParser.Parse(method);
