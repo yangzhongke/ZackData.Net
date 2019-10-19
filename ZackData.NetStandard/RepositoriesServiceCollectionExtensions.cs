@@ -15,8 +15,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// one instance of stub Repository  for one request
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="dbContextCreator"></param>
-        /// <param name="assemblies"></param>
+        /// <param name="dbContextCreator">delegate to create an instance of DbSet</param>
+        /// <param name="assemblies">assemblies that contain Repository Interfaces</param>
         /// <returns></returns>
         public static IServiceCollection AddScopedRepositories(this IServiceCollection services,
             Func<DbContext> dbContextCreator, params Assembly[] assemblies)
@@ -39,8 +39,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// single instance of stub Repository
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="dbContextCreator"></param>
-        /// <param name="assemblies"></param>
+        /// <param name="dbContextCreator">delegate to create an instance of DbSet</param>
+        /// <param name="assemblies">assemblies that contain Repository Interfaces</param>
         /// <returns></returns>
         public static IServiceCollection AddSingletonRepositories(this IServiceCollection services,
             Func<DbContext> dbContextCreator, params Assembly[] assemblies)
@@ -63,8 +63,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// each instance of stub Repository for each IOC
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="dbContextCreator"></param>
-        /// <param name="assemblies"></param>
+        /// <param name="dbContextCreator">delegate to create an instance of DbSet</param>
+        /// <param name="assemblies">assemblies that contain Repository Interfaces</param>
         /// <returns></returns>
         public static IServiceCollection AddTransientRepositories(this IServiceCollection services,
             Func<DbContext> dbContextCreator, params Assembly[] assemblies)
