@@ -12,6 +12,15 @@ namespace Tests.NetCore
         [Predicate("AuthorId=@0 or Name=@1")]
         IQueryable<Book> FindFoo(long authorId,string name, Order order);
 
+        [Predicate("AuthorId=@0")]
+        IQueryable<Book> FindFoo2(long authorId);
+
+        [Predicate("AuthorId=@0")]
+        IEnumerable<Book> FindFoo3(long authorId);
+
+        [Predicate("AuthorId=@0")]
+        Book[] FindFoo4(long authorId);
+
         [Predicate("AuthorId=@0 or Name=@1")]
         IQueryable<Book> FindFooOrderByPrice(long authorId, string name, Order[] sorts);
 

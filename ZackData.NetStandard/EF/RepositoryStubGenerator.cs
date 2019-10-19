@@ -510,9 +510,15 @@ namespace ZackData.NetStandard.EF
                 }
                 sbCode.Append(string.Join(",", plainActualArguments)).Append(")");
                 if(findMethodBaseInfo.ReturnType.IsGenericType
-                    &&findMethodBaseInfo.ReturnType.GetGenericTypeDefinition()==typeof(IQueryable<>))
+                    &&(findMethodBaseInfo.ReturnType.GetGenericTypeDefinition()==typeof(IQueryable<>)||
+                    findMethodBaseInfo.ReturnType.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+                    ))
                 {
                     //do nothing
+                }
+                else if(findMethodBaseInfo.ReturnType.IsArray)
+                {
+                    sbCode.Append(".ToArray()");
                 }
                 else if (findMethodBaseInfo.ReturnType.IsGenericType && findMethodBaseInfo.ReturnType.GetGenericTypeDefinition() == typeof(Page<>))
                 {
