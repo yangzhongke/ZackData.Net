@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
     <Authors>Zack Yang</Authors>
     <PackageReleaseNotes></PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/yangzhongke/ZackData.Net</PackageProjectUrl>
     <RepositoryUrl>https://github.com/yangzhongke/ZackData.Net</RepositoryUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Description>PreView-0.1.3</Description>
+    <Description>PreView-0.1.4</Description>
   </PropertyGroup>
 
   <ItemGroup>

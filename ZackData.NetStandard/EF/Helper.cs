@@ -8,7 +8,7 @@ using ZackData.NetStandard.Exceptions;
 
 namespace ZackData.NetStandard.EF
 {
-    public static class Helper
+    static class Helper
     {
         public static void GetAllParentInterface(Type type,List<Type> interfaces)
         {

@@ -14,7 +14,8 @@ support all kinds of deleteXXX()
 
 7. add cache to RepositoryStubGenerator(done)
 
-zackdata支持原生sql标注执行crud
+zackdata支持原生sql标注执行crud NativeSQLAttribute
+
 写简介文档，发布第一个预览版.文档中提到用ef，提到开发理念:simple，不重新发明轮子，不支持复杂方法名。文档主页用英文，链接到中文版。列一个类似于spring data jpa的支持方法的表格
 要做性能测试，提供和原生ef的对比数据
 
