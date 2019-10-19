@@ -20,8 +20,8 @@ namespace Tests.NetCore
                 {
                     Console.WriteLine(b);
                 }*/
-                RepositoryStubGenerator gen = new RepositoryStubGenerator(() => ctx);
-                var rep = gen.Create<Book,long,IBookRepository>();
+                RepositoryStubGenerator gen = new RepositoryStubGenerator();
+                var rep = gen.Create<Book,long,IBookRepository>(ctx);
                 //var rep = new BaseEFCrudRepository<Book, long>(() => ctx);
                 //var books = rep.Find("Name.Contains(\"m\")");
                 //var books = rep.Find("!(Id in @0)",new long[] { 3,5});
@@ -53,7 +53,7 @@ namespace Tests.NetCore
                     Console.WriteLine(b);
                 }
                 Console.WriteLine("ok");
-                gen = new RepositoryStubGenerator(() => ctx);
+                gen = new RepositoryStubGenerator();
                 var b1 = rep.FindByName(".net core");
                 Console.WriteLine(b1);
 

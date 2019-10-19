@@ -18,14 +18,8 @@ namespace ZackData.NetStandard.EF
     public class RepositoryStubGenerator
     {
         public static ConcurrentDictionary<string, Type> typesCache = new ConcurrentDictionary<string,Type>();
-
-        private Func<DbContext> dbContextCreator;
-        public RepositoryStubGenerator(Func<DbContext> dbContextCreator)
-        {
-            this.dbContextCreator = dbContextCreator;
-        }
         
-        public TRepository Create<TEntity, ID, TRepository>() where TEntity : class
+        public TRepository Create<TEntity, ID, TRepository>(DbContext dbCtx) where TEntity : class
             where TRepository : class
         {
             string cacheKey = typeof(TEntity) + "." + typeof(ID) + "." + typeof(TRepository);
@@ -35,7 +29,7 @@ namespace ZackData.NetStandard.EF
                 repositoryImplType = BuildRepositoryImplType<TEntity, ID, TRepository>();
                 typesCache[cacheKey] = repositoryImplType;
             }            
-            return (TRepository)Activator.CreateInstance(repositoryImplType, this.dbContextCreator);
+            return (TRepository)Activator.CreateInstance(repositoryImplType, dbCtx);
         }
 
         private Type BuildRepositoryImplType<TEntity, ID, TRepository>()
@@ -61,7 +55,7 @@ namespace ZackData.NetStandard.EF
             sbCode.AppendLine($"public class {repositoryImplName} : BaseEFCrudRepository<{entityTypeFullName},{idTypeFullName}>,{repositoryInterfaceName}");
             sbCode.AppendLine(@"
                 {");
-            sbCode.AppendLine($"public {repositoryImplName}(Func<DbContext> dbContextCreator):base(dbContextCreator)");
+            sbCode.AppendLine($"public {repositoryImplName}(DbContext dbCtx):base(dbCtx)");
             sbCode.AppendLine("{}");
 
             //all the methods of interfaces must be implemented

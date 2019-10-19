@@ -13,16 +13,16 @@ namespace ZackData.NetStandard
 {
     public class BaseEFCrudRepository<TEntity, ID> : ICrudRepository<TEntity, ID> where TEntity : class
     {
-        protected Func<DbContext> dbContextCreator;
+        protected DbContext dbCtx;
 
         private readonly IEntityType entityType;
         private readonly string tableName;
         private readonly IProperty[] primaryKeyProperties;
 
-        public BaseEFCrudRepository(Func<DbContext> dbContextCreator)
+        public BaseEFCrudRepository(DbContext dbCtx)
         {
-            this.dbContextCreator = dbContextCreator;
-            this.entityType = dbContextCreator().Model.FindEntityType(typeof(TEntity));
+            this.dbCtx = dbCtx;
+            this.entityType = dbCtx.Model.FindEntityType(typeof(TEntity));
             this.tableName = this.entityType.Relational().TableName;
             this.primaryKeyProperties = this.entityType.FindPrimaryKey().Properties.ToArray();
         }
@@ -31,7 +31,7 @@ namespace ZackData.NetStandard
         {
             get
             {
-                return this.dbContextCreator().Set<TEntity>();
+                return dbCtx.Set<TEntity>();
             }
         }
 
@@ -52,7 +52,7 @@ namespace ZackData.NetStandard
 
         public long Count()
         {
-            return this.dbContextCreator().Set<TEntity>().LongCount();
+            return this.dbCtx.Set<TEntity>().LongCount();
         }
 
         protected long Count(string predicate, params object[] args)
@@ -111,7 +111,7 @@ namespace ZackData.NetStandard
             }
             //todo:use Microsoft.SqlServer.Management.SqlParser.Parser(https://www.nuget.org/packages/Microsoft.SqlServer.SqlManagementObjects/)
             //to parse whereSQL"Id>5"-->"Fid>5"
-            var entityType = dbContextCreator().Model.FindEntityType(typeof(TEntity));
+            var entityType = this.dbCtx.Model.FindEntityType(typeof(TEntity));
             string tableName = entityType.Relational().TableName;
             return ExecuteSqlCommand($"Delete from {tableName} where {whereSQL}", args);
         }
@@ -192,7 +192,7 @@ namespace ZackData.NetStandard
 
         public IQueryable<TEntity> FindAllById(IEnumerable<ID> ids)
         {
-            var pKeys = this.dbContextCreator().Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;  
+            var pKeys = this.dbCtx.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;  
             if(!pKeys.Any(k=>k.Name=="Id"))
             {
                 throw new PropertyNotFoundException("There is no Property named Id");
@@ -202,7 +202,7 @@ namespace ZackData.NetStandard
 
         public TEntity FindById(ID id)
         {
-            var pKeys = this.dbContextCreator().Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
+            var pKeys = this.dbCtx.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties;
             if (!pKeys.Any(k => k.Name == "Id"))
             {
                 throw new PropertyNotFoundException("There is no Property named Id");
@@ -300,7 +300,7 @@ namespace ZackData.NetStandard
 
         protected int SaveChanges()
         {
-            return this.dbContextCreator().SaveChanges();
+            return this.dbCtx.SaveChanges();
         }
 
         protected IEnumerable<TEntity> FromSQL(string sql, params object[] args)
@@ -312,7 +312,7 @@ namespace ZackData.NetStandard
         protected int ExecuteSqlCommand(string sql, params object[] args)
         {
             //ExecuteSqlCommand:Install-Package Microsoft.EntityFrameworkCore.Relational -Version 2.2.0
-            return dbContextCreator().Database.ExecuteSqlCommand(sql, args);
+            return this.dbCtx.Database.ExecuteSqlCommand(sql, args);
         }
     }
 }
