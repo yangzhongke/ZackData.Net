@@ -53,8 +53,8 @@ namespace Tests.NetCore
                     Console.WriteLine(b);
                 }
                 Console.WriteLine("ok");
-                gen = new RepositoryStubGenerator();
-                var b1 = rep.FindByName(".net core");
+                var rep2 = gen.Create<Book, long, IBookRepository>(ctx);
+                var b1 = rep2.FindByName(".net core");
                 Console.WriteLine(b1);
 
                 /*

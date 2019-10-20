@@ -108,6 +108,7 @@ namespace ZackData.NetStandard.EF
             foreach (var asm in currentAssemblies)
             {
                 if (asm.IsDynamic) continue;
+                if (string.IsNullOrWhiteSpace(asm.Location)) continue;
                 metaReferences.Add(MetadataReference.CreateFromFile(asm.Location));
             }
             metaReferences.Add(MetadataReference.CreateFromFile(typeof(DynamicQueryableExtensions).Assembly.Location));

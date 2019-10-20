@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using ZackData.NetStandard;
 using ZackData.NetStandard.EF;
 using System.Linq;
@@ -12,6 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class RepositoriesServiceCollectionExtensions
     {
         /// <summary>
+        /// Register all the interfaces that implement ICrudRepository in assemblies,
         /// one instance of stub Repository  for one request
         /// </summary>
         /// <param name="services"></param>
@@ -36,6 +36,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
+        /// Register all the interfaces that implement ICrudRepository in assemblies,
         /// single instance of stub Repository
         /// </summary>
         /// <param name="services"></param>
@@ -60,6 +61,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
+        /// Register all the interfaces that implement ICrudRepository in assemblies,
         /// each instance of stub Repository for each IOC
         /// </summary>
         /// <param name="services"></param>
