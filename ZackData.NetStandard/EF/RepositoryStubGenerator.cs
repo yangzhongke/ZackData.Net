@@ -72,7 +72,8 @@ namespace ZackData.NetStandard.EF
                 foreach (var intfMethod in intfType.GetMethods())
                 {
                     string methodName = intfMethod.Name;
-                    if (methodName.StartsWithIgnoreCase("Find"))
+                    if (methodName.StartsWithIgnoreCase("Find")|| methodName.StartsWithIgnoreCase("Query")
+                        ||methodName.StartsWithIgnoreCase("Get"))
                     {
                         sbCode.AppendLine().Append(CreateFindMethod<TEntity>(intfMethod)).AppendLine();
                     }

@@ -21,6 +21,9 @@ namespace Tests.NetCore
         [Predicate("AuthorId=@0")]
         Book[] FindFoo4(long authorId);
 
+        [Predicate("AuthorId=@0")]
+        Book[] QueryFoo4(long authorId);
+
         [Predicate("AuthorId=@0 or Name=@1")]
         IQueryable<Book> FindFooOrderByPrice(long authorId, string name, Order[] sorts);
 

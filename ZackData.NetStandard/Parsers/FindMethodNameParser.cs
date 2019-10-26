@@ -12,7 +12,7 @@ namespace ZackData.NetStandard.Parsers
     {
         private static RegexOptions reOptions = RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled;
         //if use PredicateAttribute,the 'ByXXX'  should be ignored by parser
-        private static readonly Regex reFindMethod = new Regex("^Find(By(?<PropertyPart>.+?))?(OrderBy(?<OrderByName>.+?)(?<OrderingRule>(Asc|Desc))?)?$", reOptions);
+        private static readonly Regex reFindMethod = new Regex("^(Find|Query|Get)(By(?<PropertyPart>.+?))?(OrderBy(?<OrderByName>.+?)(?<OrderingRule>(Asc|Desc))?)?$", reOptions);
 
         //Name1,Name1AndName2,Name1OrName2
         private static readonly Regex reByProperties = new Regex("^(?<Property1>.+?)((?<Operator>And|Or)(?<Property2>.+))?$", reOptions);//don't support more than 2 columnNames, because too long to be supported

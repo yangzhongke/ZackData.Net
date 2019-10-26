@@ -47,7 +47,7 @@ namespace Tests.NetCore
                 //var books = rep.FindByPriceOrName(99, "3About Microsoft",Order.Asc("Price"));
                 //var books = rep.FindFoo2(1);
                 //var books = rep.FindFoo3(1);
-                var books = rep.FindFoo4(1);
+                var books = rep.QueryFoo4(1);
                 foreach (var b in books)
                 {
                     Console.WriteLine(b);
