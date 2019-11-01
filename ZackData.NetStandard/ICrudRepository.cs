@@ -15,6 +15,8 @@ namespace ZackData.NetStandard
 
         IEnumerable<TEntity> AddNew(IEnumerable<TEntity> entities);
 
+        void Update(TEntity entity);
+
         void DeleteById(ID id);
 
         void Delete(TEntity entity);

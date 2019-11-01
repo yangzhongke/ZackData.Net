@@ -17,8 +17,8 @@ namespace ZackData.NetStandard.EF
 {
     public class RepositoryStubGenerator
     {
-        public static ConcurrentDictionary<string, Type> typesCache = new ConcurrentDictionary<string,Type>();
-        
+        public static ConcurrentDictionary<string, Type> typesCache = new ConcurrentDictionary<string, Type>();
+
         public TRepository Create<TEntity, ID, TRepository>(DbContext dbCtx) where TEntity : class
             where TRepository : class
         {
@@ -28,7 +28,7 @@ namespace ZackData.NetStandard.EF
             {
                 repositoryImplType = BuildRepositoryImplType<TEntity, ID, TRepository>();
                 typesCache[cacheKey] = repositoryImplType;
-            }            
+            }
             return (TRepository)Activator.CreateInstance(repositoryImplType, dbCtx);
         }
 
@@ -72,22 +72,22 @@ namespace ZackData.NetStandard.EF
                 foreach (var intfMethod in intfType.GetMethods())
                 {
                     string methodName = intfMethod.Name;
-                    if (methodName.StartsWithIgnoreCase("Find")|| methodName.StartsWithIgnoreCase("Query")
-                        ||methodName.StartsWithIgnoreCase("Get"))
+                    if (methodName.StartsWithIgnoreCase("Find") || methodName.StartsWithIgnoreCase("Query")
+                        || methodName.StartsWithIgnoreCase("Get"))
                     {
                         sbCode.AppendLine().Append(CreateFindMethod<TEntity>(intfMethod)).AppendLine();
                     }
                     else if (methodName.StartsWithIgnoreCase("Delete"))
                     {
-
+                        sbCode.AppendLine().Append(CreateDeleteMethod<TEntity>(intfMethod)).AppendLine();
                     }
                     else if (methodName.StartsWithIgnoreCase("Update"))
                     {
-
+                        sbCode.AppendLine().Append(CreateUpdateMethod<TEntity>(intfMethod)).AppendLine();
                     }
                     else if (methodName.StartsWithIgnoreCase("Count"))
                     {
-
+                        sbCode.AppendLine().Append(CreateCountMethod<TEntity>(intfMethod)).AppendLine();
                     }
                     else
                     {
@@ -144,8 +144,8 @@ namespace ZackData.NetStandard.EF
             //If there is a parameter of type PageRequest<T>, return type must be Page<T>
             if (findMethodBaseInfo.PageRequestParameter != null)
             {
-                if(!method.ReturnType.IsGenericType
-                    ||method.ReturnType.GetGenericTypeDefinition()!=typeof(Page<>))
+                if (!method.ReturnType.IsGenericType
+                    || method.ReturnType.GetGenericTypeDefinition() != typeof(Page<>))
                 {
                     throw new ConventionException($"since there is a parameter '{findMethodBaseInfo.PageRequestParameter.Name}' of type PageRequest, the return type of {method} must be Page<T>");
                 }
@@ -156,7 +156,7 @@ namespace ZackData.NetStandard.EF
             sbCode.AppendLine("{");
             string predicate;//where condition
             List<string> plainActualArguments = new List<string>();//plain Actual Arguments(PageRequest,Order, Order[] and string predicate ) those will be passed to Find()
-            var plainFormalParameterNames = findMethodBaseInfo.PlainParameters.Select(p=>p.Name);//plain Formal Parameters of current method
+            var plainFormalParameterNames = findMethodBaseInfo.PlainParameters.Select(p => p.Name);//plain Formal Parameters of current method
 
             //begin calculate the predicate
             if (findMethodBaseInfo is FindByPredicateMethodInfo)
@@ -167,8 +167,8 @@ namespace ZackData.NetStandard.EF
                  * For example
                  * @Predicate("id=@0 and name=@1 or age>@2")
                  * FindFoo(long id,string name,int age)
-                 */ 
-                plainActualArguments.AddRange(plainFormalParameterNames);                               
+                 */
+                plainActualArguments.AddRange(plainFormalParameterNames);
             }
             else if (findMethodBaseInfo is FindWithoutByMethodInfo)
             {
@@ -181,12 +181,12 @@ namespace ZackData.NetStandard.EF
             else if (findMethodBaseInfo is FindByTwoPropertiesMethodInfo)
             {
                 var twoPInfo = (FindByTwoPropertiesMethodInfo)findMethodBaseInfo;
-                predicate = twoPInfo.PropertyName1+"=@0 "+twoPInfo.Operator+" "+twoPInfo.PropertyName2+"=@1";
-                if(plainFormalParameterNames.Count()<2)
+                predicate = twoPInfo.PropertyName1 + "=@0 " + twoPInfo.Operator + " " + twoPInfo.PropertyName2 + "=@1";
+                if (plainFormalParameterNames.Count() < 2)
                 {
                     throw new ConventionException($"It is expected that {method} has 2 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
                 }
-                else if(plainFormalParameterNames.Count()>2)
+                else if (plainFormalParameterNames.Count() > 2)
                 {
                     Debug.Write($"It is expected that {method} has 2 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found, so they will be ignored.");
                 }
@@ -217,10 +217,10 @@ namespace ZackData.NetStandard.EF
                 var pvInfo = (FindByPropertyVerbMethodInfo)findMethodBaseInfo;
                 //todo: Use FromSQL to support functions that are not supported by System.Linq.Dynamic.Core
                 //such as 'like','not like','not in'
-                switch(pvInfo.Verb)
+                switch (pvInfo.Verb)
                 {
                     case PropertyVerb.Between:
-                        predicate = pvInfo.PropertyName + ">@0 and "+ pvInfo.PropertyName+"<@1";
+                        predicate = pvInfo.PropertyName + ">@0 and " + pvInfo.PropertyName + "<@1";
                         if (plainFormalParameterNames.Count() < 2)
                         {
                             throw new ConventionException($"It is expected that {method} has 1 plain parameters(except for PageQuest,Sort and Sort[]),but {plainFormalParameterNames.Count()} was found.");
@@ -422,13 +422,13 @@ namespace ZackData.NetStandard.EF
             }
             //end calculate the predicate
 
-            if(findMethodBaseInfo.PageRequestParameter!=null)
+            if (findMethodBaseInfo.PageRequestParameter != null)
             {
-                if(!findMethodBaseInfo.ReturnType.IsGenericType&& findMethodBaseInfo.ReturnType.GetGenericTypeDefinition()!= typeof(Page<>))
+                if (!findMethodBaseInfo.ReturnType.IsGenericType && findMethodBaseInfo.ReturnType.GetGenericTypeDefinition() != typeof(Page<>))
                 {
                     throw new ConventionException($"there is a Parameter of type PageRequest in method {method} , so the return type must be Page<T>");
                 }
-                if(findMethodBaseInfo.OrderParameter!=null|| findMethodBaseInfo.OrdersParameter != null)
+                if (findMethodBaseInfo.OrderParameter != null || findMethodBaseInfo.OrdersParameter != null)
                 {
                     throw new ConventionException($"since there is a Parameter of type PageRequest in method {method} , and there are Sort[] in PageRequest, so it is not allowed to have Sort or Sort[] Parameters in this method");
                 }
@@ -436,19 +436,19 @@ namespace ZackData.NetStandard.EF
                 sbCode.Append("return this.Find(").Append(findMethodBaseInfo.PageRequestParameter.Name)
                     .Append(",").Append("\"").Append(predicate);
                 sbCode.Append("\"");
-                if(plainActualArguments.Count>0)
+                if (plainActualArguments.Count > 0)
                 {
                     sbCode.Append(",");
-                }                
-                sbCode.Append(string.Join(",",plainActualArguments)).AppendLine(");");
+                }
+                sbCode.Append(string.Join(",", plainActualArguments)).AppendLine(");");
             }
-            else if(findMethodBaseInfo.OrderParameter!=null)
+            else if (findMethodBaseInfo.OrderParameter != null)
             {
                 if (!findMethodBaseInfo.ReturnType.IsGenericType && findMethodBaseInfo.ReturnType.GetGenericTypeDefinition() != typeof(Page<>))
                 {
                     throw new ConventionException($"there is a Parameter of type PageRequest in method {method} , so the return type must be Page<T>");
                 }
-                if (findMethodBaseInfo.OrderInMethodName!=null)
+                if (findMethodBaseInfo.OrderInMethodName != null)
                 {
                     throw new ConventionException($"the name of method {method} alread contains OrderBy, so it is not allowed to contains parameter of type Order or Order[]");
                 }
@@ -478,7 +478,7 @@ namespace ZackData.NetStandard.EF
                 }
                 sbCode.Append(string.Join(",", plainActualArguments)).AppendLine(");");
             }
-            else if(findMethodBaseInfo.OrderInMethodName!=null)//FindByPriceOrNameOrderByPrice
+            else if (findMethodBaseInfo.OrderInMethodName != null)//FindByPriceOrNameOrderByPrice
             {
                 Order order = findMethodBaseInfo.OrderInMethodName;
                 sbCode.Append("return this.Find(").Append("new Order(\"").Append(order.Property).Append("\",")
@@ -505,14 +505,14 @@ namespace ZackData.NetStandard.EF
                     sbCode.Append(",");
                 }
                 sbCode.Append(string.Join(",", plainActualArguments)).Append(")");
-                if(findMethodBaseInfo.ReturnType.IsGenericType
-                    &&(findMethodBaseInfo.ReturnType.GetGenericTypeDefinition()==typeof(IQueryable<>)||
+                if (findMethodBaseInfo.ReturnType.IsGenericType
+                    && (findMethodBaseInfo.ReturnType.GetGenericTypeDefinition() == typeof(IQueryable<>) ||
                     findMethodBaseInfo.ReturnType.GetGenericTypeDefinition() == typeof(IEnumerable<>)
                     ))
                 {
                     //do nothing
                 }
-                else if(findMethodBaseInfo.ReturnType.IsArray)
+                else if (findMethodBaseInfo.ReturnType.IsArray)
                 {
                     sbCode.Append(".ToArray()");
                 }
@@ -520,7 +520,7 @@ namespace ZackData.NetStandard.EF
                 {
                     throw new ConventionException($"There is no OrderBy in the methodName or parameters in the method {method},so there return type cannot be Page<T>");
                 }
-                else if(findMethodBaseInfo.ReturnType==typeof(TEntity))
+                else if (findMethodBaseInfo.ReturnType == typeof(TEntity))
                 {
                     sbCode.Append(".SingleOrDefault()");
                 }
@@ -529,6 +529,28 @@ namespace ZackData.NetStandard.EF
 
             sbCode.AppendLine("}");
             return sbCode.ToString();
+        }
+
+        private string CreateDeleteMethod<TEntity>(MethodInfo method)
+        {
+            //1.DeleteByName
+            //2.DeleteByNameAndAge
+            //3.
+            //@Predicate("age>5")
+            //DeleteFoo(int age)
+            //4.DeleteByNameLike
+            throw new NotImplementedException();
+        }
+
+        private string CreateUpdateMethod<TEntity>(MethodInfo method)
+        {
+            //
+            throw new NotImplementedException();
+        }
+
+        private string CreateCountMethod<TEntity>(MethodInfo method)
+        {
+            throw new NotImplementedException();
         }
     }
 }

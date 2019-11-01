@@ -171,6 +171,12 @@ namespace ZackData.NetStandard
             }
         }
 
+        public void Update(TEntity entity)
+        {
+            this.dbCtx.Entry(entity).State = EntityState.Modified;
+            this.SaveChanges();
+        }
+
         public bool ExistsById(ID id)
         {
             if (!primaryKeyProperties.Any(k => k.Name == "Id"))
